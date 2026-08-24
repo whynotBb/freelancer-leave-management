@@ -33,14 +33,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^6.1.0",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
     "shadcn": "^4.19.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.1.11"
+    "vite-tsconfig-paths": "^4.3.2",
+    "vitest": "^3.2.7"
   }
 }
