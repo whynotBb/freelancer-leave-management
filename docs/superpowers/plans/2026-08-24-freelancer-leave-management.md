@@ -898,21 +898,23 @@ git commit -m "feat: 휴가 기간 중복 경고 판정 로직 추가"
 - Modify: `.env.local` (환경 변수)
 
 **Interfaces:**
-- Produces: `users`, `leaveGrants`, `leaveRequests`, `holidays` Drizzle 테이블 정의, `db`
-  (Drizzle client 인스턴스) — 이후 모든 API 태스크가 이 스키마와 `db`를 사용한다.
+- Produces: `users`, `leaveGrants`, `leaveRequests`, `holidays`, `notifications` Drizzle 테이블
+  정의, `db` (Drizzle client 인스턴스) — 이후 모든 API 태스크가 이 스키마와 `db`를 사용한다.
 
-- [ ] **Step 1: Postgres 데이터베이스 프로비저닝**
+- [ ] **Step 1: Supabase 데이터베이스 프로비저닝**
 
-`vercel:marketplace` 스킬을 사용해 Postgres 데이터베이스(예: Neon)를 프로비저닝한다.
-특정 벤더 SDK를 직접 설치하지 말고 마켓플레이스 통합이 제공하는 연결 문자열을 사용한다.
+`vercel:marketplace` 스킬을 사용해 **Supabase** 통합을 프로비저닝한다(설계 문서 10장 — 실시간
+알림을 위해 Neon 대신 Supabase Postgres를 채택). 인증은 Supabase Auth가 아닌 Task 10의
+Auth.js로 별도 구현하므로, 여기서는 Postgres 연결 문자열만 사용한다.
 
 ```bash
 vercel link --yes
-vercel integration add   # marketplace 스킬 안내에 따라 Postgres 통합 선택
+vercel integration add   # marketplace 스킬 안내에 따라 Supabase 통합 선택
 vercel env pull .env.local
 ```
 
-`.env.local`에 `DATABASE_URL`이 채워졌는지 확인한다.
+`.env.local`에 `DATABASE_URL`이 채워졌는지 확인한다. Realtime 구독(Task 25)에 필요한
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`도 함께 채워지는지 확인한다.
 
 - [ ] **Step 2: Drizzle 설정 파일 작성**
 
@@ -983,7 +985,22 @@ export const holidays = pgTable('holidays', {
   date: date('date', { mode: 'string' }).notNull().unique(),
   name: varchar('name', { length: 100 }).notNull(),
 })
+
+export const notifications = pgTable('notifications', {
+  id: serial('id').primaryKey(),
+  recipientId: integer('recipient_id').notNull().references(() => users.id),
+  type: varchar('type', { length: 30 }).notNull(), // 'SIGNUP_PENDING' | 'LEAVE_SUBMITTED' | 'LEAVE_APPROVED' | 'LEAVE_REJECTED'
+  refId: integer('ref_id').notNull(), // userId(가입 알림) 또는 leaveRequestId(휴가 알림)
+  message: text('message').notNull(),
+  read: boolean('read').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
 ```
+
+`notifications`는 설계 문서 7.1절의 실시간 알림 전용 테이블이다. 이벤트 발생 시점(Task 13
+가입승인 대기 생성, Task 17 휴가계 제출, Task 20 승인/반려)에 이 테이블에 insert하고,
+Supabase Realtime은 `users`/`leave_requests` 원본 테이블이 아닌 이 테이블만 구독한다
+(Task 25에서 배선).
 
 - [ ] **Step 4: DB 클라이언트 작성**
 
@@ -1035,7 +1052,7 @@ Expected: "관리자 계정 생성 완료" 출력
 
 ```bash
 git add lib/db drizzle.config.ts drizzle package.json package-lock.json
-git commit -m "feat: Postgres 스키마 정의 및 관리자 계정 시드 추가"
+git commit -m "feat: Supabase Postgres 스키마 정의 및 관리자 계정 시드 추가"
 ```
 
 ---
@@ -3327,11 +3344,112 @@ git commit -m "feat: 관리자 연차 수동 조정 기능 추가"
 
 ---
 
+### Task 25: 실시간 알림 (Supabase Realtime)
+
+**Files:**
+- Create: `lib/notifications/create-notification.ts`
+- Create: `lib/supabase/client.ts` (브라우저용 Supabase 클라이언트)
+- Create: `components/notification-bell.tsx`
+- Modify: `app/api/signup/route.ts` (Task 11)
+- Modify: `app/api/leave-requests/[id]/submit/route.ts` (Task 17)
+- Modify: `app/api/leave-requests/[id]/approve/route.ts`, `.../reject/route.ts` (Task 20)
+- Modify: `components/gnb.tsx` (Task 23)
+- Modify: Supabase 대시보드 설정 (RLS 정책, Realtime 발행 테이블 등록)
+
+**Interfaces:**
+- Consumes: `db`, `notifications` (Task 9), `requireAdmin`/세션 (Task 10)
+- Produces: `createNotification({ recipientId, type, refId, message })`,
+  `NotificationBell` 클라이언트 컴포넌트(관리자/프리랜서 GNB에 배치)
+
+설계 문서 7.1절 기준: 관리자는 가입 대기·휴가 제출 알림을, 프리랜서 본인은 본인 휴가계의
+승인/반려 알림을 접속 중에만 실시간으로 받는다. `users`/`leave_requests` 원본 테이블이 아닌
+전용 `notifications` 테이블만 Realtime 구독 대상으로 삼는다.
+
+- [ ] **Step 1: Supabase Realtime 활성화 및 RLS 정책 설정**
+
+Supabase 대시보드(또는 SQL)에서 `notifications` 테이블을 Realtime publication에 추가하고,
+RLS를 활성화한 뒤 "본인이 수신자인 행만 SELECT 가능" 정책을 추가한다. 관리자용 구독은 원본
+행 대신 별도 API(`/api/admin/notifications`)로 폴백 조회하거나, 관리자 전용 정책을 추가한다.
+Auth.js 세션과 Supabase RLS는 별개의 인증 체계이므로, 클라이언트는 **익명(anon) 키로 연결하되
+쿼리 시 본인의 세션에서 얻은 `recipientId`로 필터링**하고, 서버(API 라우트)에서 생성되는
+`notifications` row 자체를 신뢰 경계로 삼는다(클라이언트가 임의 recipientId를 조작해도 RLS가
+행을 반환하지 않도록 설계). 세부 정책 문구는 구현 시점에 Supabase 문서를 참조해 확정한다.
+
+```bash
+npm install @supabase/supabase-js
+```
+
+- [ ] **Step 2: 알림 생성 헬퍼 작성**
+
+```ts
+// lib/notifications/create-notification.ts
+import { db } from '@/lib/db/client'
+import { notifications } from '@/lib/db/schema'
+
+type NotificationType = 'SIGNUP_PENDING' | 'LEAVE_SUBMITTED' | 'LEAVE_APPROVED' | 'LEAVE_REJECTED'
+
+export async function createNotification(params: {
+  recipientId: number
+  type: NotificationType
+  refId: number
+  message: string
+}) {
+  await db.insert(notifications).values(params)
+}
+```
+
+- [ ] **Step 3: 이벤트 발생 지점에 알림 생성 연결**
+
+- `app/api/signup/route.ts`: 가입 신청 성공 후 관리자 전원에게 `SIGNUP_PENDING` 알림 생성.
+- `app/api/leave-requests/[id]/submit/route.ts`: 제출 처리 후 지정된 결재자에게
+  `LEAVE_SUBMITTED` 알림 생성.
+- `app/api/leave-requests/[id]/approve/route.ts`, `.../reject/route.ts`: 처리 후 신청인에게
+  `LEAVE_APPROVED`/`LEAVE_REJECTED` 알림 생성.
+
+- [ ] **Step 4: 브라우저 Supabase 클라이언트 및 구독 컴포넌트 작성**
+
+```ts
+// lib/supabase/client.ts
+import { createClient } from '@supabase/supabase-js'
+
+export const supabaseBrowserClient = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+```
+
+`components/notification-bell.tsx`에서 로그인한 사용자의 `id`/`role`을 기준으로
+`notifications` 테이블을 `postgres_changes` INSERT 이벤트로 구독하고, 토스트/뱃지로 표시한다.
+관리자는 `type in ('SIGNUP_PENDING','LEAVE_SUBMITTED')` 전체를, 프리랜서는
+`recipientId = 본인 id`인 행만 구독한다.
+
+- [ ] **Step 5: GNB에 알림 벨 배치**
+
+`components/gnb.tsx`에 `<NotificationBell />`을 추가한다.
+
+- [ ] **Step 6: 수동 검증**
+
+Run: `npm run dev`. 두 개의 브라우저 세션(관리자 1개, 프리랜서 1개)을 열어두고, 프리랜서가
+휴가계를 제출하면 관리자 세션에 알림이 즉시 표시되는지, 관리자가 승인하면 프리랜서 세션에
+알림이 즉시 표시되는지 확인한다.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add lib/notifications lib/supabase components/notification-bell.tsx app/api/signup app/api/leave-requests components/gnb.tsx package.json package-lock.json
+git commit -m "feat: Supabase Realtime 기반 실시간 알림 기능 추가"
+```
+
+---
+
 ## Post-Implementation Checklist
 
 - [ ] `npm run test` — Task 2~8의 도메인 로직 단위 테스트 전체 통과
 - [ ] `npm run build` — 타입 에러 없이 프로덕션 빌드 성공
 - [ ] 회원가입 → 관리자 승인 → 로그인 → 휴가계 작성 → 제출 → 결재 → 대시보드 반영까지
       전체 흐름을 브라우저에서 수동으로 1회 통과
-- [ ] Vercel에 배포 후 `vercel:marketplace`로 프로비저닝한 DB의 `DATABASE_URL`, `AUTH_SECRET`,
-      `CRON_SECRET` 환경 변수가 프로덕션에도 설정되어 있는지 확인
+- [ ] 프리랜서 휴가계 제출 시 관리자 세션에, 관리자 승인/반려 시 프리랜서 세션에 실시간 알림이
+      뜨는지 수동 확인 (Task 25)
+- [ ] Vercel에 배포 후 `vercel:marketplace`로 프로비저닝한 Supabase의 `DATABASE_URL`,
+      `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `AUTH_SECRET`, `CRON_SECRET`
+      환경 변수가 프로덕션에도 설정되어 있는지 확인
