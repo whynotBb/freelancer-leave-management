@@ -1074,7 +1074,7 @@ git commit -m "feat: Supabase Postgres 스키마 정의 및 관리자 계정 시
 - Produces: `auth()` (세션 조회), `signIn`, `signOut`, `requireAdmin(): Promise<Session>`,
   `requireApprovedUser(): Promise<Session>` — 이후 모든 API 라우트가 이 가드 함수를 사용한다.
 
-- [ ] **Step 1: 환경 변수 추가**
+- [x] **Step 1: 환경 변수 추가**
 
 `.env.local`에 추가:
 
@@ -1086,7 +1086,11 @@ AUTH_SECRET=<npx auth secret 명령으로 생성한 값>
 npx auth secret
 ```
 
-- [ ] **Step 2: NextAuth 설정 작성**
+> 완료 노트: 이 환경(Node v20.14.0)에서 `npx auth secret`이 chevrotain(Node ≥22 요구)
+> 의존성 문제로 실패하여, 대신 `crypto.randomBytes(32).toString('base64')`로 동등한
+> 256비트 엔트로피의 `AUTH_SECRET`을 생성해 채웠다(리뷰에서 안전성 확인됨).
+
+- [x] **Step 2: NextAuth 설정 작성**
 
 ```ts
 // lib/auth/auth-options.ts
@@ -1141,7 +1145,7 @@ export const authConfig: NextAuthConfig = {
 }
 ```
 
-- [ ] **Step 3: NextAuth 핸들러 export**
+- [x] **Step 3: NextAuth 핸들러 export**
 
 ```ts
 // lib/auth/index.ts
@@ -1158,7 +1162,7 @@ import { handlers } from '@/lib/auth'
 export const { GET, POST } = handlers
 ```
 
-- [ ] **Step 4: 세션 가드 헬퍼 작성**
+- [x] **Step 4: 세션 가드 헬퍼 작성**
 
 ```ts
 // lib/auth/session.ts
@@ -1184,17 +1188,26 @@ export async function requireAdmin() {
 }
 ```
 
-- [ ] **Step 5: 검증**
+- [x] **Step 5: 검증**
 
 Run: `npm run build`
 Expected: 타입 에러 없이 빌드 성공
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/auth app/api/auth .env.local.example
 git commit -m "feat: Auth.js Credentials 인증 및 세션 가드 헬퍼 추가"
 ```
+
+> 완료 노트: `.env.local.example` 파일은 브리프의 예시 파일 목록에 있었으나 저장소에
+> 존재하지 않고 계획 Files 목록에도 없어 새로 만들지 않음(범위 확장 방지). 실제 커밋은
+> `lib/auth`, `app/api/auth`만 포함.
+>
+> **Task 12에 인계할 사항**: `authorize()`가 평범한 `Error`를 던지므로 Auth.js v5가
+> 이를 일반화된 에러 코드로 정규화할 가능성이 높다. `'가입 승인 대기 중이거나 거절된
+> 계정입니다.'` 메시지가 로그인 화면에 그대로 도달하지 않을 수 있으므로, Task 12에서
+> `CredentialsSignin` 서브클래싱 등으로 이 메시지를 노출하는 방법을 검토해야 한다.
 
 ---
 
