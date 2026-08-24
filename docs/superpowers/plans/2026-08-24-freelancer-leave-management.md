@@ -901,7 +901,7 @@ git commit -m "feat: 휴가 기간 중복 경고 판정 로직 추가"
 - Produces: `users`, `leaveGrants`, `leaveRequests`, `holidays`, `notifications` Drizzle 테이블
   정의, `db` (Drizzle client 인스턴스) — 이후 모든 API 태스크가 이 스키마와 `db`를 사용한다.
 
-- [ ] **Step 1: Supabase 데이터베이스 프로비저닝**
+- [x] **Step 1: Supabase 데이터베이스 프로비저닝**
 
 `vercel:marketplace` 스킬을 사용해 **Supabase** 통합을 프로비저닝한다(설계 문서 10장 — 실시간
 알림을 위해 Neon 대신 Supabase Postgres를 채택). 인증은 Supabase Auth가 아닌 Task 10의
@@ -919,7 +919,7 @@ Task 9~25 전체에서 `DATABASE_URL`이 아니라 다음 두 변수를 구분�
 - `POSTGRES_URL_NON_POOLING` — 세션 단위 연결이 필요한 `drizzle-kit generate/migrate`용
 - `POSTGRES_URL` — 애플리케이션 런타임(Drizzle client, API 라우트)용 풀링 연결
 
-- [ ] **Step 2: Drizzle 설정 파일 작성**
+- [x] **Step 2: Drizzle 설정 파일 작성**
 
 ```ts
 // drizzle.config.ts
@@ -935,7 +935,7 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 3: 스키마 정의**
+- [x] **Step 3: 스키마 정의**
 
 ```ts
 // lib/db/schema.ts
@@ -1005,7 +1005,7 @@ export const notifications = pgTable('notifications', {
 Supabase Realtime은 `users`/`leave_requests` 원본 테이블이 아닌 이 테이블만 구독한다
 (Task 25에서 배선).
 
-- [ ] **Step 4: DB 클라이언트 작성**
+- [x] **Step 4: DB 클라이언트 작성**
 
 ```ts
 // lib/db/client.ts
@@ -1017,14 +1017,14 @@ const queryClient = postgres(process.env.POSTGRES_URL!)
 export const db = drizzle(queryClient, { schema })
 ```
 
-- [ ] **Step 5: 마이그레이션 생성 및 적용**
+- [x] **Step 5: 마이그레이션 생성 및 적용**
 
 ```bash
 npx drizzle-kit generate
 npx drizzle-kit migrate
 ```
 
-- [ ] **Step 6: 첫 관리자 계정 시드**
+- [x] **Step 6: 첫 관리자 계정 시드**
 
 `lib/db/seed-admin.ts` 생성:
 
@@ -1051,7 +1051,7 @@ seedAdmin().then(() => process.exit(0))
 Run: `npx tsx lib/db/seed-admin.ts` (필요 시 `npm install -D tsx`)
 Expected: "관리자 계정 생성 완료" 출력
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add lib/db drizzle.config.ts drizzle package.json package-lock.json
