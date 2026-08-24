@@ -1221,7 +1221,7 @@ git commit -m "feat: Auth.js Credentials 인증 및 세션 가드 헬퍼 추가"
 - Consumes: `db`, `users` (Task 9)
 - Produces: `POST /api/signup` — 성공 시 `{ id: number }` 반환, 이메일 중복 시 409
 
-- [ ] **Step 1: 회원가입 API 작성**
+- [x] **Step 1: 회원가입 API 작성**
 
 ```ts
 // app/api/signup/route.ts
@@ -1239,7 +1239,12 @@ const signupSchema = z.object({
 })
 
 export async function POST(request: Request) {
-  const body = await request.json()
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: '입력값이 올바르지 않습니다.' }, { status: 400 })
+  }
   const parsed = signupSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: '입력값이 올바르지 않습니다.' }, { status: 400 })
@@ -1266,7 +1271,7 @@ export async function POST(request: Request) {
 }
 ```
 
-- [ ] **Step 2: 회원가입 화면 작성**
+- [x] **Step 2: 회원가입 화면 작성**
 
 ```tsx
 // app/signup/page.tsx
@@ -1344,7 +1349,7 @@ export default function SignupPage() {
 }
 ```
 
-- [ ] **Step 3: 수동 검증**
+- [x] **Step 3: 수동 검증**
 
 Run: `npm run dev`, 브라우저에서 `/signup`으로 이동해 신규 계정을 신청하고, DB에서
 `signup_status = 'PENDING'`으로 저장되는지 확인.
@@ -1353,7 +1358,10 @@ Run: `npm run dev`, 브라우저에서 `/signup`으로 이동해 신규 계정�
 npx drizzle-kit studio
 ```
 
-- [ ] **Step 4: Commit**
+> 완료 노트: curl + 실제 Supabase DB 조회로 검증(테스트 계정은 확인 후 삭제). 리뷰에서
+> 발견된 "잘못된 JSON 본문 처리 누락"을 fix round 1에서 수정(위 코드에 반영됨).
+
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/api/signup app/signup
