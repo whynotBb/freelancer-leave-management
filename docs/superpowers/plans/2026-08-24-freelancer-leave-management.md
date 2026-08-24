@@ -913,8 +913,11 @@ vercel integration add   # marketplace 스킬 안내에 따라 Supabase 통합 �
 vercel env pull .env.local
 ```
 
-`.env.local`에 `DATABASE_URL`이 채워졌는지 확인한다. Realtime 구독(Task 25)에 필요한
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`도 함께 채워지는지 확인한다.
+`.env.local`에 Supabase 통합이 채워주는 변수(`POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`,
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` 등)가 채워졌는지 확인한다. 이후
+Task 9~25 전체에서 `DATABASE_URL`이 아니라 다음 두 변수를 구분해서 사용한다:
+- `POSTGRES_URL_NON_POOLING` — 세션 단위 연결이 필요한 `drizzle-kit generate/migrate`용
+- `POSTGRES_URL` — 애플리케이션 런타임(Drizzle client, API 라우트)용 풀링 연결
 
 - [ ] **Step 2: Drizzle 설정 파일 작성**
 
@@ -927,7 +930,7 @@ export default defineConfig({
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    url: process.env.POSTGRES_URL_NON_POOLING!,
   },
 })
 ```
@@ -1010,7 +1013,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from './schema'
 
-const queryClient = postgres(process.env.DATABASE_URL!)
+const queryClient = postgres(process.env.POSTGRES_URL!)
 export const db = drizzle(queryClient, { schema })
 ```
 
@@ -3450,6 +3453,6 @@ git commit -m "feat: Supabase Realtime 기반 실시간 알림 기능 추가"
       전체 흐름을 브라우저에서 수동으로 1회 통과
 - [ ] 프리랜서 휴가계 제출 시 관리자 세션에, 관리자 승인/반려 시 프리랜서 세션에 실시간 알림이
       뜨는지 수동 확인 (Task 25)
-- [ ] Vercel에 배포 후 `vercel:marketplace`로 프로비저닝한 Supabase의 `DATABASE_URL`,
-      `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `AUTH_SECRET`, `CRON_SECRET`
-      환경 변수가 프로덕션에도 설정되어 있는지 확인
+- [ ] Vercel에 배포 후 `vercel:marketplace`로 프로비저닝한 Supabase의 `POSTGRES_URL`,
+      `POSTGRES_URL_NON_POOLING`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+      `AUTH_SECRET`, `CRON_SECRET` 환경 변수가 프로덕션에도 설정되어 있는지 확인
