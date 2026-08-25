@@ -6,6 +6,9 @@ import { requireAdmin } from '@/lib/auth/session'
 
 export async function GET() {
   await requireAdmin()
-  const pending = await db.select().from(users).where(eq(users.signupStatus, 'PENDING'))
+  const pending = await db
+    .select({ id: users.id, name: users.name, email: users.email })
+    .from(users)
+    .where(eq(users.signupStatus, 'PENDING'))
   return NextResponse.json(pending)
 }

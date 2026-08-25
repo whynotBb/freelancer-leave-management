@@ -13,6 +13,7 @@ interface PendingUser {
 export default function AdminSignupsPage() {
   const [pending, setPending] = useState<PendingUser[]>([])
   const [hireDates, setHireDates] = useState<Record<number, string>>({})
+  const [errors, setErrors] = useState<Record<number, string>>({})
 
   useEffect(() => {
     fetch('/api/admin/signups')
@@ -21,10 +22,23 @@ export default function AdminSignupsPage() {
   }, [])
 
   async function decide(id: number, decision: 'APPROVED' | 'REJECTED') {
-    await fetch(`/api/admin/signups/${id}`, {
+    const res = await fetch(`/api/admin/signups/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ decision, hireDate: hireDates[id] }),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      setErrors((prev) => ({
+        ...prev,
+        [id]: body?.error ?? '처리에 실패했습니다.',
+      }))
+      return
+    }
+    setErrors((prev) => {
+      const next = { ...prev }
+      delete next[id]
+      return next
     })
     setPending((prev) => prev.filter((u) => u.id !== id))
   }
@@ -35,20 +49,23 @@ export default function AdminSignupsPage() {
       {pending.length === 0 && <p className="text-sm text-gray-500">대기 중인 신청이 없습니다.</p>}
       <ul className="space-y-3">
         {pending.map((user) => (
-          <li key={user.id} className="flex items-center gap-3 rounded border p-3">
-            <div className="flex-1">
-              <p className="font-medium">{user.name}</p>
-              <p className="text-sm text-gray-500">{user.email}</p>
+          <li key={user.id} className="flex flex-col gap-2 rounded border p-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <p className="font-medium">{user.name}</p>
+                <p className="text-sm text-gray-500">{user.email}</p>
+              </div>
+              <Input
+                type="date"
+                className="w-40"
+                onChange={(e) => setHireDates((prev) => ({ ...prev, [user.id]: e.target.value }))}
+              />
+              <Button onClick={() => decide(user.id, 'APPROVED')}>승인</Button>
+              <Button variant="outline" onClick={() => decide(user.id, 'REJECTED')}>
+                거절
+              </Button>
             </div>
-            <Input
-              type="date"
-              className="w-40"
-              onChange={(e) => setHireDates((prev) => ({ ...prev, [user.id]: e.target.value }))}
-            />
-            <Button onClick={() => decide(user.id, 'APPROVED')}>승인</Button>
-            <Button variant="outline" onClick={() => decide(user.id, 'REJECTED')}>
-              거절
-            </Button>
+            {errors[user.id] && <p className="text-sm text-red-500">{errors[user.id]}</p>}
           </li>
         ))}
       </ul>
