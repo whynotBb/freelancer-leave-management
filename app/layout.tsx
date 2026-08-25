@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./providers";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AppShell } from "@/components/app-sidebar";
 
 const pretendard = localFont({
   src: "../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
@@ -31,7 +32,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
-          <Providers>{children}</Providers>
+          <Providers>
+            <AppShell>{children}</AppShell>
+          </Providers>
         </ThemeProvider>
       </body>
     </html>
