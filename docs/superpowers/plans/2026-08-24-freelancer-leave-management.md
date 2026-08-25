@@ -1374,13 +1374,14 @@ git commit -m "feat: 프리랜서 회원가입 신청 API 및 화면 추가"
 
 **Files:**
 - Create: `app/login/page.tsx`
-- Modify: `middleware.ts` (신규 생성)
+- Modify: `middleware.ts` (신규 생성) — 실제로는 Next.js 16에서 `middleware.ts`가 deprecated되어
+  `proxy.ts`로 이름이 바뀌었으므로 `proxy.ts`로 생성함 (기능은 동일)
 
 **Interfaces:**
 - Consumes: `signIn` (Task 10)
-- Produces: 미인증 사용자가 보호 경로 접근 시 `/login`으로 리다이렉트하는 미들웨어
+- Produces: 미인증 사용자가 보호 경로 접근 시 `/login`으로 리다이렉트하는 프록시(구 미들웨어)
 
-- [ ] **Step 1: 로그인 화면 작성**
+- [x] **Step 1: 로그인 화면 작성**
 
 ```tsx
 // app/login/page.tsx
@@ -1436,7 +1437,7 @@ export default function LoginPage() {
 }
 ```
 
-- [ ] **Step 2: 세션 프로바이더 연결**
+- [x] **Step 2: 세션 프로바이더 연결**
 
 ```tsx
 // app/providers.tsx
@@ -1451,13 +1452,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 `app/layout.tsx`의 `<body>` 내부를 `<Providers>{children}</Providers>`로 감싼다.
 
-- [ ] **Step 3: 보호 경로 미들웨어 작성**
+- [x] **Step 3: 보호 경로 프록시(구 미들웨어) 작성**
 
 ```ts
-// middleware.ts
+// proxy.ts (Next.js 16: middleware.ts가 deprecated되어 proxy.ts로 대체됨, 동작은 동일)
 import { auth } from '@/lib/auth'
 
-const PUBLIC_PATHS = ['/login', '/signup']
+// /api/signup(Task 11의 공개 회원가입 API)을 빠뜨리면 이미 배포된 회원가입 기능이 깨지므로 포함
+const PUBLIC_PATHS = ['/login', '/signup', '/api/signup']
 
 export default auth((req) => {
   const isPublic = PUBLIC_PATHS.some((path) => req.nextUrl.pathname.startsWith(path))
@@ -1472,17 +1474,23 @@ export const config = {
 }
 ```
 
-- [ ] **Step 4: 수동 검증**
+- [x] **Step 4: 수동 검증**
 
 Run: `npm run dev`. 로그아웃 상태에서 `/dashboard` 접근 시 `/login`으로 리다이렉트되는지,
 Task 9에서 시드한 관리자 계정(`admin@example.com` / `changeme123!`)으로 로그인이 성공하는지
 확인.
 
-- [ ] **Step 5: Commit**
+> 완료 노트: curl + 헤드리스 브라우저로 검증. `authorize()`가 던지는 일반 `Error`가
+> NextAuth v5에서 `Configuration` 등 일반화된 에러 코드로 정규화되어 클라이언트에
+> 그대로 전달되지 않음을 확인(Task 10에서 인계된 이슈) — 브리프의 로그인 화면이 이미
+> 단일 공용 에러 메시지로 모든 실패 케이스를 커버하고 있어 `auth-options.ts` 수정은
+> 불필요했음.
+
+- [x] **Step 5: Commit**
 
 ```bash
-git add app/login app/providers.tsx app/layout.tsx middleware.ts
-git commit -m "feat: 로그인 화면 및 인증 미들웨어 추가"
+git add app/login app/providers.tsx app/layout.tsx proxy.ts
+git commit -m "feat: 로그인 화면 및 인증 프록시(승인 게이트) 추가"
 ```
 
 ---
