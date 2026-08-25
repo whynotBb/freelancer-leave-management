@@ -166,6 +166,14 @@ export default function AdminUsersPage() {
             : u
         )
       )
+      setDrafts((prev) => ({
+        ...prev,
+        [user.id]: {
+          hireDate: draft.hireDate,
+          grantedTotal: String(updated.granted),
+          usedTotal: String(updated.used),
+        },
+      }))
       setErrors((prev) => {
         const next = { ...prev }
         delete next[user.id]
