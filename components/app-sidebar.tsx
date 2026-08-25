@@ -33,6 +33,11 @@ const ADMIN_LINKS = [
   { href: '/admin/users', label: '프리랜서 정보 관리' },
 ]
 
+// 로그인/회원가입 화면은 비인증 화면 전용 카드 레이아웃(Task 13.6)을 그대로 써야 하므로,
+// 세션이 남아있는 상태로 이 경로에 진입해도(뒤로가기, 남은 세션의 탭 재방문 등) 사이드바
+// 셸을 절대 씌우지 않는다 — 세션 유무가 아니라 경로 자체로 판단한다.
+const NO_CHROME_ROUTES = ['/login', '/signup']
+
 export function AppSidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
@@ -101,11 +106,13 @@ export function AppSidebar() {
 // 루트 레이아웃(서버 컴포넌트)은 useSession을 직접 쓸 수 없으므로, 로그인 여부에 따라
 // 사이드바 셸을 씌울지 결정하는 역할을 이 클라이언트 컴포넌트가 담당한다.
 // 세션이 없으면(=/login, /signup) children을 그대로 반환해 Task 13.6의 카드 중앙 정렬
-// 레이아웃이 깨지지 않도록 한다.
+// 레이아웃이 깨지지 않도록 한다. /login, /signup은 세션이 남아있는 상태(뒤로가기, 남은
+// 세션의 탭 재방문 등)로 진입해도 항상 사이드바 없이 보여야 하므로 경로도 함께 확인한다.
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
   const { data: session } = useSession()
 
-  if (!session?.user) {
+  if (!session?.user || NO_CHROME_ROUTES.includes(pathname ?? '')) {
     return <>{children}</>
   }
 
