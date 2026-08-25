@@ -1507,7 +1507,7 @@ git commit -m "feat: 로그인 화면 및 인증 프록시(승인 게이트) 추
 - Produces: `GET /api/admin/signups` (대기 목록), `PATCH /api/admin/signups/:id`
   `{ decision: 'APPROVED' | 'REJECTED', hireDate?, position?, department?, defaultApproverId? }`
 
-- [ ] **Step 1: 대기 목록 조회 API**
+- [x] **Step 1: 대기 목록 조회 API**
 
 ```ts
 // app/api/admin/signups/route.ts
@@ -1519,12 +1519,18 @@ import { requireAdmin } from '@/lib/auth/session'
 
 export async function GET() {
   await requireAdmin()
-  const pending = await db.select().from(users).where(eq(users.signupStatus, 'PENDING'))
+  const pending = await db
+    .select({ id: users.id, name: users.name, email: users.email })
+    .from(users)
+    .where(eq(users.signupStatus, 'PENDING'))
   return NextResponse.json(pending)
 }
 ```
 
-- [ ] **Step 2: 승인/거절 처리 API**
+> 완료 노트: 리뷰에서 원래 코드(`db.select().from(users)`)가 `passwordHash`까지 그대로
+> 관리자 브라우저로 노출하는 문제가 발견되어, 위처럼 명시적 컬럼 선택으로 수정함(fix round 1).
+
+- [x] **Step 2: 승인/거절 처리 API**
 
 ```ts
 // app/api/admin/signups/[id]/route.ts
@@ -1571,7 +1577,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 ```
 
-- [ ] **Step 3: 관리자 승인 화면**
+> 완료 노트(park): 존재하지 않는 id로 PATCH해도 `{ ok: true }`를 반환하는 문제(존재 여부
+> 미확인)와 `requireAdmin()`의 예외가 잡히지 않아 403 대신 500이 나가는 문제는 이 태스크에서
+> 고치지 않고 전체 브랜치 리뷰 때 일괄 정리하기로 함(다른 관리자 API 태스크에도 동일 패턴 존재).
+
+- [x] **Step 3: 관리자 승인 화면**
 
 ```tsx
 // app/admin/signups/page.tsx
@@ -1598,10 +1608,20 @@ export default function AdminSignupsPage() {
   }, [])
 
   async function decide(id: number, decision: 'APPROVED' | 'REJECTED') {
-    await fetch(`/api/admin/signups/${id}`, {
+    const res = await fetch(`/api/admin/signups/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ decision, hireDate: hireDates[id] }),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      setErrors((prev) => ({ ...prev, [id]: body?.error ?? '처리에 실패했습니다.' }))
+      return
+    }
+    setErrors((prev) => {
+      const next = { ...prev }
+      delete next[id]
+      return next
     })
     setPending((prev) => prev.filter((u) => u.id !== id))
   }
@@ -1634,12 +1654,12 @@ export default function AdminSignupsPage() {
 }
 ```
 
-- [ ] **Step 4: 수동 검증**
+- [x] **Step 4: 수동 검증**
 
 Run: `npm run dev`, 관리자 계정으로 로그인 후 `/admin/signups`에서 Task 11에서 신청한 계정을
 승인하고, 해당 계정으로 로그인이 가능해지는지 확인.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/api/admin/signups app/admin/signups
