@@ -6,6 +6,7 @@ import { signIn } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -28,26 +29,32 @@ export default function LoginPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto mt-20 max-w-sm space-y-4">
-      <h1 className="text-xl font-semibold">로그인</h1>
-      <div>
-        <Label htmlFor="email">이메일</Label>
-        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+    <>
+      {/* Task 23에서 GNB가 생기면 그 안으로 옮길 임시 위치 */}
+      <div className="fixed top-4 right-4">
+        <ThemeToggle />
       </div>
-      <div>
-        <Label htmlFor="password">비밀번호</Label>
-        <Input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <Button type="submit" className="w-full">
-        로그인
-      </Button>
-    </form>
+      <form onSubmit={handleSubmit} className="mx-auto mt-20 max-w-sm space-y-4">
+        <h1 className="text-xl font-semibold">로그인</h1>
+        <div>
+          <Label htmlFor="email">이메일</Label>
+          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div>
+          <Label htmlFor="password">비밀번호</Label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <Button type="submit" className="w-full">
+          로그인
+        </Button>
+      </form>
+    </>
   )
 }

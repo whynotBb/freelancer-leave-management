@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -32,41 +33,53 @@ export default function SignupPage() {
 
   if (submitted) {
     return (
-      <div className="mx-auto mt-20 max-w-sm text-center">
-        <p>가입 신청이 완료되었습니다. 관리자 승인 후 로그인할 수 있습니다.</p>
-        <Button className="mt-4" onClick={() => router.push('/login')}>
-          로그인 화면으로
-        </Button>
-      </div>
+      <>
+        {/* Task 23에서 GNB가 생기면 그 안으로 옮길 임시 위치 */}
+        <div className="fixed top-4 right-4">
+          <ThemeToggle />
+        </div>
+        <div className="mx-auto mt-20 max-w-sm text-center">
+          <p>가입 신청이 완료되었습니다. 관리자 승인 후 로그인할 수 있습니다.</p>
+          <Button className="mt-4" onClick={() => router.push('/login')}>
+            로그인 화면으로
+          </Button>
+        </div>
+      </>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto mt-20 max-w-sm space-y-4">
-      <h1 className="text-xl font-semibold">회원가입 신청</h1>
-      <div>
-        <Label htmlFor="name">이름</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+    <>
+      {/* Task 23에서 GNB가 생기면 그 안으로 옮길 임시 위치 */}
+      <div className="fixed top-4 right-4">
+        <ThemeToggle />
       </div>
-      <div>
-        <Label htmlFor="email">이메일</Label>
-        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-      </div>
-      <div>
-        <Label htmlFor="password">비밀번호</Label>
-        <Input
-          id="password"
-          type="password"
-          minLength={8}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <Button type="submit" className="w-full">
-        가입 신청
-      </Button>
-    </form>
+      <form onSubmit={handleSubmit} className="mx-auto mt-20 max-w-sm space-y-4">
+        <h1 className="text-xl font-semibold">회원가입 신청</h1>
+        <div>
+          <Label htmlFor="name">이름</Label>
+          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+        </div>
+        <div>
+          <Label htmlFor="email">이메일</Label>
+          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div>
+          <Label htmlFor="password">비밀번호</Label>
+          <Input
+            id="password"
+            type="password"
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <Button type="submit" className="w-full">
+          가입 신청
+        </Button>
+      </form>
+    </>
   )
 }

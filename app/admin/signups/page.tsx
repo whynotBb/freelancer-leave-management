@@ -46,14 +46,14 @@ export default function AdminSignupsPage() {
   return (
     <div className="mx-auto mt-10 max-w-2xl">
       <h1 className="mb-4 text-xl font-semibold">가입 승인 대기</h1>
-      {pending.length === 0 && <p className="text-sm text-gray-500">대기 중인 신청이 없습니다.</p>}
+      {pending.length === 0 && <p className="text-sm text-muted-foreground">대기 중인 신청이 없습니다.</p>}
       <ul className="space-y-3">
         {pending.map((user) => (
           <li key={user.id} className="flex flex-col gap-2 rounded border p-3">
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <p className="font-medium">{user.name}</p>
-                <p className="text-sm text-gray-500">{user.email}</p>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
               </div>
               <Input
                 type="date"
@@ -65,7 +65,7 @@ export default function AdminSignupsPage() {
                 거절
               </Button>
             </div>
-            {errors[user.id] && <p className="text-sm text-red-500">{errors[user.id]}</p>}
+            {errors[user.id] && <p className="text-sm text-destructive">{errors[user.id]}</p>}
           </li>
         ))}
       </ul>
