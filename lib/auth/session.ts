@@ -11,10 +11,19 @@ export async function requireApprovedUser() {
   return session
 }
 
-export async function requireAdmin() {
+export async function requireSuperAdmin() {
   const session = await requireApprovedUser()
-  if ((session.user as { role?: string }).role !== 'ADMIN') {
-    throw new ForbiddenError('관리자만 접근할 수 있습니다.')
+  if ((session.user as { role?: string }).role !== 'SUPER_ADMIN') {
+    throw new ForbiddenError('최고관리자만 접근할 수 있습니다.')
+  }
+  return session
+}
+
+export async function requireApproverOrAbove() {
+  const session = await requireApprovedUser()
+  const role = (session.user as { role?: string }).role
+  if (role !== 'SUPER_ADMIN' && role !== 'APPROVER') {
+    throw new ForbiddenError('결재자 또는 최고관리자만 접근할 수 있습니다.')
   }
   return session
 }

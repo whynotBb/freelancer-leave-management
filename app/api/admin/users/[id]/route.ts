@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db/client'
 import { users } from '@/lib/db/schema'
-import { requireAdmin } from '@/lib/auth/session'
+import { requireApproverOrAbove } from '@/lib/auth/session'
 
 const updateSchema = z.object({
   position: z.string().optional(),
@@ -12,7 +12,7 @@ const updateSchema = z.object({
 })
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin()
+  await requireApproverOrAbove()
   const { id } = await params
   const parsed = updateSchema.safeParse(await request.json())
   if (!parsed.success) {
