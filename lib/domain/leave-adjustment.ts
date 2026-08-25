@@ -46,6 +46,24 @@ export interface UsageAdjustmentRow {
   status: 'APPROVED'
 }
 
+export function buildHireDateChangeMarkerRow(params: {
+  userId: number
+  today: string
+  cycleEnd: string
+  reason: string
+  createdBy: number
+}): GrantAdjustmentRow {
+  return {
+    userId: params.userId,
+    grantDate: params.today,
+    amount: 0,
+    cycleEnd: params.cycleEnd,
+    expired: false,
+    note: params.reason,
+    createdBy: params.createdBy,
+  }
+}
+
 export function buildUsageAdjustmentRow(params: {
   userId: number
   currentUsed: number

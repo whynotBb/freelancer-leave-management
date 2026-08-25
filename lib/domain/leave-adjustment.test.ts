@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { calculateAdjustmentDelta, buildGrantAdjustmentRow, buildUsageAdjustmentRow } from './leave-adjustment'
+import {
+  calculateAdjustmentDelta,
+  buildGrantAdjustmentRow,
+  buildHireDateChangeMarkerRow,
+  buildUsageAdjustmentRow,
+} from './leave-adjustment'
 
 describe('calculateAdjustmentDelta', () => {
   it('새 값이 더 크면 양수 델타를 반환한다', () => {
@@ -49,6 +54,32 @@ describe('buildGrantAdjustmentRow', () => {
   it('감액도 음수 amount로 만든다', () => {
     const row = buildGrantAdjustmentRow({ ...base, newGranted: 2 })
     expect(row?.amount).toBe(-3)
+  })
+})
+
+describe('buildHireDateChangeMarkerRow', () => {
+  const base = {
+    userId: 1,
+    today: '2026-09-01',
+    cycleEnd: '2027-01-01',
+    reason: '입사일 정정',
+    createdBy: 99,
+  }
+
+  it('연차 델타 없이 사유만 남기는 0원 마커 레코드를 만든다', () => {
+    expect(buildHireDateChangeMarkerRow(base)).toEqual({
+      userId: 1,
+      grantDate: '2026-09-01',
+      amount: 0,
+      cycleEnd: '2027-01-01',
+      expired: false,
+      note: '입사일 정정',
+      createdBy: 99,
+    })
+  })
+
+  it('buildGrantAdjustmentRow와 달리 null을 반환하지 않는다', () => {
+    expect(buildHireDateChangeMarkerRow(base)).not.toBeNull()
   })
 })
 

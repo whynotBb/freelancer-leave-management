@@ -3,7 +3,13 @@ import { and, eq } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import { leaveGrants, leaveRequests } from '@/lib/db/schema'
 import { calculateLeaveBalance, type LeaveBalanceResult } from '@/lib/domain/leave-balance'
-import { buildGrantAdjustmentRow, buildUsageAdjustmentRow, type GrantAdjustmentRow, type UsageAdjustmentRow } from '@/lib/domain/leave-adjustment'
+import {
+  buildGrantAdjustmentRow,
+  buildHireDateChangeMarkerRow,
+  buildUsageAdjustmentRow,
+  type GrantAdjustmentRow,
+  type UsageAdjustmentRow,
+} from '@/lib/domain/leave-adjustment'
 
 function today(): string {
   return new Date().toISOString().slice(0, 10)
@@ -44,6 +50,25 @@ export async function applyGrantAdjustment(params: {
     createdBy: params.createdBy,
   })
   if (row) await db.insert(leaveGrants).values(row)
+  return row
+}
+
+export async function recordHireDateChangeMarker(params: {
+  userId: number
+  hireDate: string
+  reason: string
+  createdBy: number
+}): Promise<GrantAdjustmentRow> {
+  const asOfDate = today()
+  const balance = await getLeaveBalance(params.userId, params.hireDate, asOfDate)
+  const row = buildHireDateChangeMarkerRow({
+    userId: params.userId,
+    today: asOfDate,
+    cycleEnd: balance.cycleEnd,
+    reason: params.reason,
+    createdBy: params.createdBy,
+  })
+  await db.insert(leaveGrants).values(row)
   return row
 }
 

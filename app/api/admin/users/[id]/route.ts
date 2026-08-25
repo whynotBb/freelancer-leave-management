@@ -4,7 +4,12 @@ import { z } from 'zod'
 import { db } from '@/lib/db/client'
 import { users } from '@/lib/db/schema'
 import { requireApproverOrAbove, toAuthErrorResponse } from '@/lib/auth/session'
-import { applyGrantAdjustment, applyUsageAdjustment, getLeaveBalance } from '@/lib/db/leave-adjustments'
+import {
+  applyGrantAdjustment,
+  applyUsageAdjustment,
+  getLeaveBalance,
+  recordHireDateChangeMarker,
+} from '@/lib/db/leave-adjustments'
 import { createNotification } from '@/lib/db/notifications'
 
 const updateSchema = z.object({
@@ -76,6 +81,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           approverId: callerId,
         })
         if (usageRow) adjusted = true
+      }
+      if (body.hireDate !== undefined && !adjusted) {
+        await recordHireDateChangeMarker({
+          userId: targetId,
+          hireDate,
+          reason: body.reason!,
+          createdBy: callerId,
+        })
+        adjusted = true
       }
     }
 
