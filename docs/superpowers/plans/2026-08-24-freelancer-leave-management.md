@@ -2157,27 +2157,35 @@ git commit -m "feat: 대시보드 톤앤매너 반영 - 카드 레이아웃 및 
 
 ---
 
-### Task 13.7: 관리자 화면 좌측 사이드바 내비게이션
+### Task 13.7: 앱 전체 좌측 사이드바 내비게이션 (역할 기반, Task 23 대체)
 
-> 사용자 요청으로 추가된 삽입 태스크(Task 13.6과 15 사이). "admin 화면은 대시보드 UI를
-> 적용해야 한다, 좌측 nav 영역까지 반영"이라는 요청에 따라 shadcn dashboard-01 블록의 좌측
-> 사이드바를 관리자 라우트(`/admin/*`)에만 적용한다. 프리랜서 대상 화면(대시보드/내 문서/
-> 결재함)은 여전히 Task 23이 만들 상단 GNB를 쓴다 — 앱 전체를 사이드바로 통일하는 것이 아니라,
-> "관리자 화면 = 사이드바, 일반 화면 = 상단 GNB"로 역할에 따라 다른 셸을 쓴다. 이 결정에 따라
-> Task 23의 스펙도 함께 수정한다(아래 "Task 23 조정" 참고).
+> 사용자 요청으로 추가된 삽입 태스크(Task 13.6과 15 사이). 최초 버전은 사이드바를 관리자
+> 라우트(`/admin/*`)에만 적용하는 안이었으나, 사용자가 "Task 23의 프리랜서용 상단 GNB는
+> 적용하지 않고, 이 좌측 사이드바로 앱 전체를 통일한다"고 명확히 함에 따라 범위를 변경했다.
+> **이 태스크가 Task 23을 완전히 대체한다** — 로그인 후 화면 전체(루트 레이아웃)에 좌측
+> 사이드바를 적용하고, 역할(프리랜서/관리자)에 따라 표시되는 메뉴 항목이 달라진다. 설계 문서
+> 9장(화면 구성)의 메뉴 구조를 그대로 따른다: 공통 메뉴(대시보드/내 문서/결재함) + 관리자
+> 전용 메뉴(가입 승인/프리랜서 정보 관리, 이후 Task 15·24가 추가되면 공휴일 관리/연차 수동
+> 조정도 이 목록에 추가). `/login`, `/signup`은 비인증 화면이므로 사이드바를 적용하지 않고
+> Task 13.6의 카드형 중앙 정렬 레이아웃을 그대로 유지한다.
+>
+> **주의**: 대시보드(Task 22)/내 문서(Task 18·19)/결재함(Task 20) 페이지는 아직 존재하지
+> 않는다. 이 태스크는 그 페이지들이 생기기 전에 먼저 내비게이션 항목을 만드는 것이므로,
+> 프리랜서 계정으로 해당 링크를 클릭하면 지금은 404가 뜬다 — 이는 Task 12에서 이미 확인한
+> "로그인 성공 후 대상 페이지 미구현으로 인한 404"와 같은 성격의, 개발 진행 중 예상된
+> 상태이며 결함이 아니다. 각 페이지가 실제로 구현되는 시점(Task 18~22)에 자연히 해소된다.
 
 **Files:**
-- Create: `app/admin/layout.tsx` (사이드바 셸로 `/admin/*` 하위 페이지 전체를 감쌈 — Next.js
-  App Router의 nested layout)
-- Create: `components/admin-sidebar.tsx`
-- Modify: `docs/superpowers/plans/...`(본 문서) Task 23 절 — 상단 GNB에서 관리자 링크 제거,
-  역할 분기 로직 단순화
+- Create: `components/app-sidebar.tsx` (역할 기반 메뉴, `app/admin/*` 전용이 아닌 앱 전체 공용)
+- Modify: `app/layout.tsx` (루트 레이아웃에 `SidebarProvider`/사이드바 연결)
+- Modify: `docs/superpowers/plans/...`(본 문서) — Task 23 절을 "Task 13.7로 대체됨"으로 갱신
 
 **Interfaces:**
 - Consumes: `useSession`/`signOut` (next-auth/react, Task 12), Task 13.5에서 이미 정의된
   `--sidebar*` CSS 토큰(추가 색상 작업 불필요)
-- `app/admin/signups/page.tsx`, `app/admin/users/page.tsx`는 **수정하지 않는다** — 두 페이지의
-  기존 `Card` 기반 콘텐츠는 그대로 두고, 이 태스크는 그 바깥을 감싸는 레이아웃 셸만 추가한다.
+- `app/login/page.tsx`, `app/signup/page.tsx`, `app/admin/signups/page.tsx`,
+  `app/admin/users/page.tsx`는 **수정하지 않는다** — 기존 콘텐츠는 그대로 두고, 이 태스크는
+  전체를 감싸는 레이아웃 셸(로그인/회원가입 제외)만 추가/변경한다.
 
 - [ ] **Step 1: shadcn sidebar 컴포넌트 설치**
 
@@ -2193,10 +2201,10 @@ npx shadcn@latest add sidebar
 export된 컴포넌트 이름을 확인하고 그것을 사용할 것** — 아래 Step 2 예시 코드는 표준 shadcn
 sidebar API를 기준으로 한 참고 형태이며, 실제 설치 결과와 다르면 실제 설치 결과를 따른다.
 
-- [ ] **Step 2: 관리자 사이드바 컴포넌트 작성**
+- [ ] **Step 2: 앱 사이드바 컴포넌트 작성 (역할 기반)**
 
 ```tsx
-// components/admin-sidebar.tsx
+// components/app-sidebar.tsx
 'use client'
 
 import Link from 'next/link'
@@ -2215,28 +2223,37 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
 
-// 실제로 페이지가 존재하는 항목만 나열한다. Task 15(공휴일 관리), Task 24(연차 수동 조정)가
-// 구현되면 이 배열에 항목을 추가한다 — 아직 없는 라우트를 미리 링크하지 않는다(404 방지).
+// 공통 메뉴: 아직 Task 18~22가 구현되지 않아 대상 페이지가 없다(임시 404, 정상 — 위 설명 참고).
+const COMMON_LINKS = [
+  { href: '/dashboard', label: '대시보드' },
+  { href: '/documents', label: '내 문서' },
+  { href: '/approvals', label: '결재함' },
+]
+
+// 관리자 전용 메뉴: 실제로 페이지가 존재하는 항목만 나열한다. Task 15(공휴일 관리),
+// Task 24(연차 수동 조정)가 구현되면 이 배열에 항목을 추가한다.
 const ADMIN_LINKS = [
   { href: '/admin/signups', label: '가입 승인' },
   { href: '/admin/users', label: '프리랜서 정보 관리' },
 ]
 
-export function AdminSidebar() {
+export function AppSidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
+
+  if (!session?.user) return null
+  const role = (session.user as { role?: string }).role
 
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="px-2 py-1 text-sm font-semibold">휴가관리시스템 관리자</div>
+        <div className="px-2 py-1 text-sm font-semibold">휴가관리시스템</div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>관리자 메뉴</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {ADMIN_LINKS.map((link) => (
+              {COMMON_LINKS.map((link) => (
                 <SidebarMenuItem key={link.href}>
                   <SidebarMenuButton asChild isActive={pathname?.startsWith(link.href)}>
                     <Link href={link.href}>{link.label}</Link>
@@ -2246,10 +2263,26 @@ export function AdminSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {role === 'ADMIN' && (
+          <SidebarGroup>
+            <SidebarGroupLabel>관리자 메뉴</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {ADMIN_LINKS.map((link) => (
+                  <SidebarMenuItem key={link.href}>
+                    <SidebarMenuButton asChild isActive={pathname?.startsWith(link.href)}>
+                      <Link href={link.href}>{link.label}</Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <div className="px-2 py-1 text-xs text-muted-foreground">
-          {session?.user?.name} ({session?.user?.email})
+          {session.user.name} ({session.user.email})
         </div>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -2267,53 +2300,54 @@ export function AdminSidebar() {
 현재 이 프로젝트에는 로그아웃을 수행할 수 있는 UI가 어디에도 없다 — 이 사이드바 푸터가
 그 최초 진입점이 된다(범위 확장이 아니라 실제로 비어있던 기능 구멍을 메우는 것).
 
-- [ ] **Step 3: `/admin/*` 레이아웃에 사이드바 연결**
+- [ ] **Step 3: 루트 레이아웃에 사이드바 연결 (로그인/회원가입 제외)**
+
+`app/layout.tsx`(Task 12의 `<Providers>` 래핑, Task 13.5의 `<ThemeProvider>` 래핑 유지)에서
+`<Providers>` 내부를 아래처럼 감싼다. `AppSidebar` 자체가 `session.user`가 없으면 `null`을
+반환하므로 로그인 전(`/login`, `/signup`)에는 사이드바가 렌더링되지 않지만, 레이아웃 구조
+자체(`SidebarProvider`/`SidebarInset`)는 항상 적용되므로 로그인/회원가입 페이지의 기존 카드
+중앙 정렬(Task 13.6, `flex min-h-svh items-center justify-center`)이 깨지지 않는지 반드시
+확인한다 — 필요하면 `SidebarInset`가 아니라 `{children}`을 감싸지 않는 조건부 렌더링으로
+처리해도 된다(구현자 판단에 맡김, Step 5에서 실제로 검증).
 
 ```tsx
-// app/admin/layout.tsx
+// app/layout.tsx (개념 예시 — 기존 Providers/ThemeProvider 래핑과 합친다)
+import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { AdminSidebar } from '@/components/admin-sidebar'
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <SidebarProvider>
-      <AdminSidebar />
-      <SidebarInset>
-        <header className="flex items-center gap-2 border-b px-4 py-3">
-          <SidebarTrigger />
-        </header>
-        <main className="p-6">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
-  )
-}
+// ...
+<SidebarProvider>
+  <AppSidebar />
+  <SidebarInset>
+    <header className="flex items-center gap-2 border-b px-4 py-3">
+      <SidebarTrigger />
+    </header>
+    <main className="p-6">{children}</main>
+  </SidebarInset>
+</SidebarProvider>
 ```
 
-이 레이아웃은 `app/admin/signups/page.tsx`, `app/admin/users/page.tsx`를 **감싸기만** 하고
-그 내부 콘텐츠(Task 13.6에서 만든 `Card` 구조)는 그대로 유지된다.
+- [ ] **Step 4: Task 23 절 갱신 (구현 대상에서 제외)**
 
-- [ ] **Step 4: Task 23 스펙 조정**
-
-본 계획 문서의 "Task 23: GNB 레이아웃" 절에서 `ADMIN_LINKS` 배열과 역할 분기 로직을 제거하고,
-`Gnb` 컴포넌트는 프리랜서 공통 링크(`대시보드`, `내 문서`, `결재함`)만 렌더링하도록 스펙을
-갱신한다. 또한 `Gnb`가 `/admin` 경로에서는 렌더링되지 않도록(또는 애초에 admin 레이아웃에는
-루트 GNB가 노출되지 않도록) 조건을 추가한다 — 그렇지 않으면 관리자 화면에 사이드바와 상단
-GNB가 동시에 나타나 중복된다. Task 23 담당 구현자는 이 갱신된 스펙을 기준으로 작업한다.
+본 계획 문서의 "Task 23: GNB 레이아웃" 절 전체를, "이 태스크는 Task 13.7로 대체되어 더 이상
+별도로 구현하지 않는다"는 안내 문구로 교체한다. 이후 Task 24로 넘어갈 때 Task 23은 건너뛴다.
 
 - [ ] **Step 5: 수동 검증**
 
-Run: `npm run dev`. 관리자 계정으로 로그인 후 `/admin/signups`, `/admin/users` 모두 좌측에
-사이드바(가입 승인/프리랜서 정보 관리 링크, 활성 라우트 강조, 하단 사용자 정보+로그아웃)가
-보이는지 확인한다. 사이드바의 로그아웃 버튼이 실제로 로그아웃 후 `/login`으로 이동시키는지
-확인한다. 라이트/다크 모드 모두에서 사이드바 색상이 Task 13.5의 `--sidebar*` 토큰과 일치하는지
-확인한다. `/login`, `/signup`은 이 태스크의 영향을 받지 않아야 한다(사이드바 없음, 기존 카드
-레이아웃 그대로).
+Run: `npm run dev`. 관리자 계정으로 로그인 후 좌측에 사이드바(공통 메뉴 3개 + 관리자 메뉴
+2개, 활성 라우트 강조, 하단 사용자 정보+로그아웃)가 보이는지 확인한다. 사이드바의 로그아웃
+버튼이 실제로 로그아웃 후 `/login`으로 이동시키는지 확인한다. `/admin/signups`,
+`/admin/users` 진입 시 정상적으로 사이드바+카드 콘텐츠가 함께 보이는지 확인한다. 프리랜서
+계정(가입 승인 처리 후)으로 로그인 시 사이드바에 공통 메뉴만 보이고 관리자 메뉴는 보이지
+않는지 확인한다. 라이트/다크 모드 모두에서 사이드바 색상이 Task 13.5의 `--sidebar*` 토큰과
+일치하는지 확인한다. `/login`, `/signup`은 사이드바 없이 기존 카드 레이아웃 그대로 보이는지
+확인한다.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add app/admin/layout.tsx components/admin-sidebar.tsx components/ui components.json docs/superpowers/plans package.json package-lock.json
-git commit -m "feat: 관리자 화면에 좌측 사이드바 내비게이션 추가"
+git add app/layout.tsx components/app-sidebar.tsx components/ui components.json docs/superpowers/plans package.json package-lock.json
+git commit -m "feat: 역할 기반 좌측 사이드바 내비게이션 추가 (Task 23 대체)"
 ```
 
 ---
@@ -3696,14 +3730,15 @@ git commit -m "feat: 대시보드 집계 API 및 화면 추가"
 
 ---
 
-### Task 23: GNB 레이아웃
+### Task 23: ~~GNB 레이아웃~~ (Task 13.7로 대체됨 — 구현하지 않음)
 
-> **Task 13.7 반영 사항**: 관리자 화면(`/admin/*`)은 Task 13.7에서 이미 좌측 사이드바 셸
-> (`app/admin/layout.tsx` + `AdminSidebar`)을 적용받았고, 그 사이드바가 관리자 메뉴(가입
-> 승인/프리랜서 정보 관리, 이후 Task 15·24가 추가되면 공휴일 관리/연차 수동 조정)를 이미
-> 담당한다. 따라서 이 GNB는 **프리랜서 공통 화면(대시보드/내 문서/결재함)에만** 적용하고,
-> 관리자 전용 링크(`ADMIN_LINKS`)와 역할 분기는 만들지 않는다. 관리자가 `/admin/*`에 있을 때
-> 이 상단 GNB가 사이드바와 함께 중복 노출되지 않도록 `/admin` 경로에서는 렌더링하지 않는다.
+> 사용자 요청으로 계획 변경: 상단 GNB 대신 좌측 사이드바로 앱 전체 내비게이션을 통일하기로
+> 했다. Task 13.7(`components/app-sidebar.tsx` + `app/layout.tsx`)이 이 태스크가 하려던 일
+> (역할 기반 메뉴, 로그아웃 진입점)을 전부 포함하므로, 이 Task 23은 별도로 구현하지 않고
+> 건너뛴다. 아래 원안 내용은 기록 목적으로만 남겨둔다.
+
+<details>
+<summary>원안 (참고용, 구현 대상 아님)</summary>
 
 **Files:**
 - Create: `components/gnb.tsx`
@@ -3712,10 +3747,8 @@ git commit -m "feat: 대시보드 집계 API 및 화면 추가"
 **Interfaces:**
 - Consumes: `useSession` (next-auth/react)
 
-- [ ] **Step 1: GNB 컴포넌트 작성**
-
 ```tsx
-// components/gnb.tsx
+// components/gnb.tsx (구현하지 않음 — Task 13.7의 app-sidebar.tsx가 대체)
 'use client'
 
 import Link from 'next/link'
@@ -3728,18 +3761,25 @@ const LINKS = [
   { href: '/approvals', label: '결재함' },
 ]
 
+const ADMIN_LINKS = [
+  { href: '/admin/signups', label: '가입 승인' },
+  { href: '/admin/users', label: '프리랜서 관리' },
+  { href: '/admin/holidays', label: '공휴일 관리' },
+]
+
 export function Gnb() {
   const pathname = usePathname()
   const { data: session } = useSession()
 
   if (!session?.user) return null
-  // 관리자 화면은 Task 13.7의 좌측 사이드바가 담당하므로 이 상단 GNB는 렌더링하지 않는다.
-  if (pathname?.startsWith('/admin')) return null
+
+  const role = (session.user as { role?: string }).role
+  const links = role === 'ADMIN' ? [...LINKS, ...ADMIN_LINKS] : LINKS
 
   return (
     <nav className="flex items-center justify-between border-b px-6 py-3">
       <div className="flex gap-4">
-        {LINKS.map((link) => (
+        {links.map((link) => (
           <Link
             key={link.href}
             href={link.href}
@@ -3757,41 +3797,7 @@ export function Gnb() {
 }
 ```
 
-- [ ] **Step 2: 루트 레이아웃에 GNB 연결**
-
-`app/layout.tsx`를 다음 구조로 갱신한다(기존 `<Providers>` 래핑 유지).
-
-```tsx
-import { Gnb } from '@/components/gnb'
-import { Providers } from './providers'
-import './globals.css'
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="ko">
-      <body>
-        <Providers>
-          <Gnb />
-          {children}
-        </Providers>
-      </body>
-    </html>
-  )
-}
-```
-
-- [ ] **Step 3: 수동 검증**
-
-Run: `npm run dev`. 프리랜서 계정으로 로그인해 대시보드/내 문서/결재함 상단 GNB가 보이는지
-확인하고, 관리자 계정으로 `/admin/*` 진입 시 이 상단 GNB가 렌더링되지 않고 Task 13.7의 좌측
-사이드바만 보이는지(중복 노출 없음) 확인한다.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add components/gnb.tsx app/layout.tsx
-git commit -m "feat: 역할 기반 GNB 레이아웃 추가"
-```
+</details>
 
 ---
 
