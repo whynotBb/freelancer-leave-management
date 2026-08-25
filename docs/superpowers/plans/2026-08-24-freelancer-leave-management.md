@@ -2366,8 +2366,14 @@ git commit -m "feat: 역할 기반 좌측 사이드바 내비게이션 추가 (T
 ```
 
 > 완료 노트: 리뷰에서 발견된 lint 경고(신규 생성된 `hooks/use-mobile.ts`의
-> `react-hooks/set-state-in-effect`)는 fix round에서 `eslint-disable-next-line` + 설명
+> `react-hooks/set-state-in-effect`)는 fix round 1에서 `eslint-disable-next-line` + 설명
 > 주석으로 해결함(로직 변경 없음).
+>
+> 완료 노트(fix round 2): 컨트롤러가 브라우저로 직접 확인하던 중, 인증된 세션(관리자/
+> 프리랜서 불문)이 `/login`이나 `/signup`에 직접 접속하면 사이드바가 로그인/회원가입 카드와
+> 함께 그대로 노출되는 문제를 발견함(세션 존재 여부만 확인하고 현재 경로는 확인하지 않던
+> 원래 로직의 허점). `AppShell`에 `NO_CHROME_ROUTES = ['/login', '/signup']` 경로 체크를
+> 추가해 해결(정확히 일치하는 경로만 제외하므로 `/admin/*` 등 다른 인증 화면에는 영향 없음).
 
 ---
 
