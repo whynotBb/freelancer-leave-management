@@ -2,8 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/date-picker'
+import { PageHeader } from '@/components/page-header'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 interface PendingUser {
   id: number
@@ -45,37 +53,83 @@ export default function AdminSignupsPage() {
   }
 
   return (
-    <div className="mx-auto mt-10 max-w-2xl">
-      <Card>
-        <CardHeader>
-          <CardTitle>가입 승인 대기</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {pending.length === 0 && <p className="text-sm text-muted-foreground">대기 중인 신청이 없습니다.</p>}
-          <ul className="space-y-3">
+    <div className="w-full">
+      <PageHeader title="가입 승인" description="프리랜서 가입 신청을 검토하고 승인 또는 거절합니다." />
+      {pending.length === 0 ? (
+        <p className="text-sm text-muted-foreground">대기 중인 신청이 없습니다.</p>
+      ) : (
+        <>
+          <Table className="hidden lg:table" containerClassName="hidden lg:block">
+            <TableHeader>
+              <TableRow>
+                <TableHead>이름</TableHead>
+                <TableHead>이메일</TableHead>
+                <TableHead>입사일</TableHead>
+                <TableHead className="text-right"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pending.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                  <TableCell>
+                    <DatePicker
+                      value={hireDates[user.id]}
+                      onChange={(value) => setHireDates((prev) => ({ ...prev, [user.id]: value }))}
+                      placeholder="입사일 선택"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button onClick={() => decide(user.id, 'APPROVED')}>승인</Button>
+                      <Button variant="outline" onClick={() => decide(user.id, 'REJECTED')}>
+                        거절
+                      </Button>
+                    </div>
+                    {errors[user.id] && (
+                      <p className="mt-1 text-right text-sm text-destructive">{errors[user.id]}</p>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
             {pending.map((user) => (
-              <li key={user.id} className="flex flex-col gap-2 rounded border p-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <p className="font-medium">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                  </div>
-                  <Input
-                    type="date"
-                    className="w-40"
-                    onChange={(e) => setHireDates((prev) => ({ ...prev, [user.id]: e.target.value }))}
+              <div key={user.id} className="space-y-3 rounded-lg border p-4">
+                <div>
+                  <p className="font-medium">{user.name}</p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">입사일</p>
+                  <DatePicker
+                    value={hireDates[user.id]}
+                    onChange={(value) => setHireDates((prev) => ({ ...prev, [user.id]: value }))}
+                    placeholder="입사일 선택"
+                    className="w-full"
                   />
-                  <Button onClick={() => decide(user.id, 'APPROVED')}>승인</Button>
-                  <Button variant="outline" onClick={() => decide(user.id, 'REJECTED')}>
+                </div>
+                <div className="flex gap-2">
+                  <Button className="flex-1" onClick={() => decide(user.id, 'APPROVED')}>
+                    승인
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    variant="outline"
+                    onClick={() => decide(user.id, 'REJECTED')}
+                  >
                     거절
                   </Button>
                 </div>
                 {errors[user.id] && <p className="text-sm text-destructive">{errors[user.id]}</p>}
-              </li>
+              </div>
             ))}
-          </ul>
-        </CardContent>
-      </Card>
+          </div>
+        </>
+      )}
     </div>
   )
 }

@@ -2,8 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { PageHeader } from '@/components/page-header'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 interface FreelancerUser {
   id: number
@@ -61,50 +69,123 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="mx-auto mt-10 max-w-3xl">
-      <Card>
-        <CardHeader>
-          <CardTitle>프리랜서 정보 관리</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {users.length === 0 && <p className="text-sm text-muted-foreground">승인된 프리랜서가 없습니다.</p>}
-          <ul className="space-y-3">
-            {users.map((user) => (
-              <li key={user.id} className="flex flex-col gap-2 rounded border p-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-40">
+    <div className="w-full">
+      <PageHeader
+        title="프리랜서 정보 관리"
+        description="승인된 프리랜서의 직급, 부서, 기본 결재자 정보를 관리합니다."
+      />
+      {users.length === 0 ? (
+        <p className="text-sm text-muted-foreground">승인된 프리랜서가 없습니다.</p>
+      ) : (
+        <>
+          <Table className="hidden lg:table" containerClassName="hidden lg:block">
+            <TableHeader>
+              <TableRow>
+                <TableHead>이름</TableHead>
+                <TableHead>입사일</TableHead>
+                <TableHead>직급</TableHead>
+                <TableHead>부서</TableHead>
+                <TableHead>기본 결재자 ID</TableHead>
+                <TableHead className="text-right"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
                     <p className="font-medium">{user.name}</p>
                     <p className="text-sm text-muted-foreground">{user.email}</p>
-                    <p className="text-xs text-muted-foreground">입사일: {user.hireDate ?? '-'}</p>
-                  </div>
-                  <Input
-                    placeholder="직급"
-                    value={user.position ?? ''}
-                    onChange={(e) => updateField(user.id, 'position', e.target.value)}
-                  />
-                  <Input
-                    placeholder="부서"
-                    value={user.department ?? ''}
-                    onChange={(e) => updateField(user.id, 'department', e.target.value)}
-                  />
-                  <Input
-                    placeholder="기본 결재자 ID"
-                    value={user.defaultApproverId ?? ''}
-                    onChange={(e) => updateField(user.id, 'defaultApproverId', e.target.value)}
-                  />
-                  <Button onClick={() => save(user)} disabled={savingId === user.id}>
-                    {savingId === user.id ? '저장 중...' : '저장'}
-                  </Button>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{user.hireDate ?? '-'}</TableCell>
+                  <TableCell>
+                    <Input
+                      placeholder="직급"
+                      value={user.position ?? ''}
+                      onChange={(e) => updateField(user.id, 'position', e.target.value)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      placeholder="부서"
+                      value={user.department ?? ''}
+                      onChange={(e) => updateField(user.id, 'department', e.target.value)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      placeholder="기본 결재자 ID"
+                      value={user.defaultApproverId ?? ''}
+                      onChange={(e) => updateField(user.id, 'defaultApproverId', e.target.value)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end">
+                      <Button onClick={() => save(user)} disabled={savingId === user.id}>
+                        {savingId === user.id ? '저장 중...' : '저장'}
+                      </Button>
+                    </div>
+                    {errors[user.id] && (
+                      <p className="mt-1 text-right text-sm text-destructive">{errors[user.id]}</p>
+                    )}
+                    {savedId === user.id && !errors[user.id] && (
+                      <p className="mt-1 text-right text-sm text-muted-foreground">저장되었습니다.</p>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
+            {users.map((user) => (
+              <div key={user.id} className="space-y-3 rounded-lg border p-4">
+                <div>
+                  <p className="font-medium">{user.name}</p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                  <p className="text-xs text-muted-foreground">입사일: {user.hireDate ?? '-'}</p>
                 </div>
+                <div className="space-y-2">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">직급</p>
+                    <Input
+                      placeholder="직급"
+                      value={user.position ?? ''}
+                      onChange={(e) => updateField(user.id, 'position', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">부서</p>
+                    <Input
+                      placeholder="부서"
+                      value={user.department ?? ''}
+                      onChange={(e) => updateField(user.id, 'department', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">기본 결재자 ID</p>
+                    <Input
+                      placeholder="기본 결재자 ID"
+                      value={user.defaultApproverId ?? ''}
+                      onChange={(e) => updateField(user.id, 'defaultApproverId', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <Button
+                  className="w-full"
+                  onClick={() => save(user)}
+                  disabled={savingId === user.id}
+                >
+                  {savingId === user.id ? '저장 중...' : '저장'}
+                </Button>
                 {errors[user.id] && <p className="text-sm text-destructive">{errors[user.id]}</p>}
                 {savedId === user.id && !errors[user.id] && (
                   <p className="text-sm text-muted-foreground">저장되었습니다.</p>
                 )}
-              </li>
+              </div>
             ))}
-          </ul>
-        </CardContent>
-      </Card>
+          </div>
+        </>
+      )}
     </div>
   )
 }
