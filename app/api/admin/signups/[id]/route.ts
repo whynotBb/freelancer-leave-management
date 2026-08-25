@@ -7,9 +7,8 @@ import { requireSuperAdmin } from '@/lib/auth/session'
 
 const decisionSchema = z.object({
   decision: z.enum(['APPROVED', 'REJECTED']),
+  role: z.enum(['FREELANCER', 'APPROVER']).optional(),
   hireDate: z.string().optional(),
-  position: z.string().optional(),
-  department: z.string().optional(),
   defaultApproverId: z.number().optional(),
 })
 
@@ -22,18 +21,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: '입력값이 올바르지 않습니다.' }, { status: 400 })
   }
 
-  if (parsed.data.decision === 'APPROVED' && !parsed.data.hireDate) {
-    return NextResponse.json({ error: '승인 시 입사일은 필수입니다.' }, { status: 400 })
+  if (parsed.data.decision === 'APPROVED') {
+    if (!parsed.data.role) {
+      return NextResponse.json({ error: '승인 시 권한(프리랜서/결재담당자)을 선택해야 합니다.' }, { status: 400 })
+    }
+    if (parsed.data.role === 'FREELANCER' && !parsed.data.hireDate) {
+      return NextResponse.json({ error: '프리랜서 승인 시 입사일은 필수입니다.' }, { status: 400 })
+    }
   }
 
+  const isFreelancer = parsed.data.role === 'FREELANCER'
   await db
     .update(users)
     .set({
       signupStatus: parsed.data.decision,
-      hireDate: parsed.data.hireDate,
-      position: parsed.data.position,
-      department: parsed.data.department,
-      defaultApproverId: parsed.data.defaultApproverId,
+      role: parsed.data.role,
+      hireDate: isFreelancer ? parsed.data.hireDate : undefined,
+      defaultApproverId: isFreelancer ? parsed.data.defaultApproverId : undefined,
     })
     .where(eq(users.id, Number(id)))
 
