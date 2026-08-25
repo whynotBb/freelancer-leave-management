@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/date-picker'
@@ -249,12 +250,15 @@ export default function AdminUsersPage() {
       <PageHeader title="프리랜서 정보 관리" description="프리랜서의 입사일, 기본 결재자, 연차 정보를 관리합니다." />
 
       <div className="mb-4 flex items-center justify-end gap-2">
-        <Input
-          placeholder="이름/이메일 검색"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-56"
-        />
+        <div className="relative">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="이름/이메일 검색"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-56 pl-8"
+          />
+        </div>
         {role === 'APPROVER' && (
           <Button variant={onlyMine ? 'default' : 'outline'} onClick={() => setOnlyMine((v) => !v)}>
             담당 프리랜서만 보기

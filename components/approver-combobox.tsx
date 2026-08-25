@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -47,12 +48,15 @@ export function ApproverCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-2" align="start">
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="이름/이메일 검색"
-          className="mb-2"
-        />
+        <div className="relative mb-2">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="이름/이메일 검색"
+            className="pl-8"
+          />
+        </div>
         <div className="max-h-60 space-y-1 overflow-y-auto">
           {filtered.length === 0 && (
             <p className="p-2 text-sm text-muted-foreground">검색 결과가 없습니다.</p>
