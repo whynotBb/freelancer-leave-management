@@ -5,11 +5,9 @@ export const users = pgTable('users', {
   name: varchar('name', { length: 100 }).notNull(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   passwordHash: text('password_hash').notNull(),
-  role: varchar('role', { length: 20 }).notNull().default('FREELANCER'), // 'ADMIN' | 'FREELANCER'
+  role: varchar('role', { length: 20 }).notNull().default('FREELANCER'), // 'SUPER_ADMIN' | 'APPROVER' | 'FREELANCER'
   signupStatus: varchar('signup_status', { length: 20 }).notNull().default('PENDING'), // 'PENDING' | 'APPROVED' | 'REJECTED'
   hireDate: date('hire_date', { mode: 'string' }),
-  position: varchar('position', { length: 50 }),
-  department: varchar('department', { length: 100 }),
   defaultApproverId: integer('default_approver_id'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
@@ -22,6 +20,7 @@ export const leaveGrants = pgTable('leave_grants', {
   cycleEnd: date('cycle_end', { mode: 'string' }).notNull(),
   expired: boolean('expired').notNull().default(false),
   note: text('note'),
+  createdBy: integer('created_by').references(() => users.id),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
@@ -32,7 +31,7 @@ export const leaveRequests = pgTable('leave_requests', {
   title: varchar('title', { length: 200 }).notNull(),
   startDate: date('start_date', { mode: 'string' }).notNull(),
   endDate: date('end_date', { mode: 'string' }).notNull(),
-  type: varchar('type', { length: 10 }).notNull(), // 'FULL' | 'AM_HALF' | 'PM_HALF'
+  type: varchar('type', { length: 10 }).notNull(), // 'FULL' | 'AM_HALF' | 'PM_HALF' | 'ADJUSTMENT'
   requestedDays: numeric('requested_days', { precision: 4, scale: 1, mode: 'number' }).notNull(),
   reason: text('reason').notNull(),
   status: varchar('status', { length: 20 }).notNull().default('DRAFT'),

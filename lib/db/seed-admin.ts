@@ -8,7 +8,7 @@ async function seedAdmin() {
     name: '관리자',
     email: 'admin@example.com',
     passwordHash,
-    role: 'ADMIN',
+    role: 'SUPER_ADMIN',
     signupStatus: 'APPROVED',
   })
   console.log('관리자 계정 생성 완료: admin@example.com / changeme123!')
