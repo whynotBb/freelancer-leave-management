@@ -16,6 +16,7 @@ import {
   KeyRoundIcon,
   HomeIcon,
   CircleHelpIcon,
+  UserCogIcon,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -60,11 +61,12 @@ const COMMON_LINKS = [
   { href: '/approvals', label: '결재함', icon: InboxIcon },
 ]
 
-// 관리자 전용 메뉴: 실제로 페이지가 존재하는 항목만 나열한다. Task 15(공휴일 관리),
-// Task 24(연차 수동 조정)가 구현되면 이 배열에 항목을 추가한다.
+// 관리자 전용 메뉴: 실제로 페이지가 존재하는 항목만 나열한다. 각 항목의 roles가 현재
+// 로그인한 사용자의 role을 포함할 때만 노출한다.
 const ADMIN_LINKS = [
-  { href: '/admin/signups', label: '가입 승인', icon: UserCheckIcon },
-  { href: '/admin/users', label: '프리랜서 정보 관리', icon: UsersIcon },
+  { href: '/admin/signups', label: '가입 승인', icon: UserCheckIcon, roles: ['SUPER_ADMIN'] },
+  { href: '/admin/users', label: '프리랜서 정보 관리', icon: UsersIcon, roles: ['SUPER_ADMIN', 'APPROVER'] },
+  { href: '/admin/approvers', label: '결재담당자 관리', icon: UserCogIcon, roles: ['SUPER_ADMIN'] },
 ]
 
 // 로그인/회원가입 화면은 비인증 화면 전용 카드 레이아웃(Task 13.6)을 그대로 써야 하므로,
@@ -84,7 +86,9 @@ function getInitial(name: string) {
 }
 
 function getRoleLabel(role: string | undefined) {
-  return role === 'ADMIN' ? '관리자' : '프리랜서'
+  if (role === 'SUPER_ADMIN') return '최고관리자'
+  if (role === 'APPROVER') return '결재자'
+  return '프리랜서'
 }
 
 export function AppSidebar() {
@@ -136,12 +140,12 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {role === 'ADMIN' && (
+        {(role === 'SUPER_ADMIN' || role === 'APPROVER') && (
           <SidebarGroup>
             <SidebarGroupLabel>관리자 메뉴</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="gap-1">
-                {ADMIN_LINKS.map((link) => (
+                {ADMIN_LINKS.filter((link) => link.roles.includes(role ?? '')).map((link) => (
                   <SidebarMenuItem key={link.href}>
                     <SidebarMenuButton
                       render={<Link href={link.href} />}
