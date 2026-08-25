@@ -82,8 +82,9 @@ export default function AdminUsersPage() {
   }, [role])
 
   const filtered = useMemo(() => {
+    const query = search.toLowerCase()
     return users
-      .filter((u) => u.name.includes(search) || u.email.includes(search))
+      .filter((u) => u.name.toLowerCase().includes(query) || u.email.toLowerCase().includes(query))
       .filter((u) => !onlyMine || u.defaultApproverId === callerId)
   }, [users, search, onlyMine, callerId])
 
@@ -156,6 +157,7 @@ export default function AdminUsersPage() {
       if (!res.ok) {
         const body = await res.json().catch(() => null)
         setErrors((prev) => ({ ...prev, [user.id]: body?.error ?? '처리에 실패했습니다.' }))
+        setDialogUserId(null)
         return
       }
       const updated = await res.json()
