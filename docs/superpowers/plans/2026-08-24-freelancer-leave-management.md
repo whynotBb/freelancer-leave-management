@@ -2040,6 +2040,123 @@ git commit -m "feat: 관리자 프리랜서 정보 관리 기능 추가"
 
 ---
 
+### Task 13.6: 대시보드 톤앤매너 반영 (카드 레이아웃 + Pretendard 폰트)
+
+> 사용자 요청으로 추가된 삽입 태스크(Task 14와 15 사이). Task 13.5(색상/다크모드)에 이어
+> 레이아웃 톤앤매너를 정리한다. 참고 이미지: shadcn "dashboard-01" 블록 스타일
+> (https://tweakcn.com/editor/theme?p=dashboard, 테마는 Task 13.5에서 이미 적용한 Supabase
+> 프리셋 그대로) — 카드형 컨테이너(둥근 모서리, 옅은 그림자, 얇은 border), 여백, 절제된 타이포
+> 위계가 특징. 아직 대시보드 화면 자체(Task 22)나 GNB(Task 23)는 만들지 않으며, 지금 존재하는
+> 4개 화면(`/login`, `/signup`, `/admin/signups`, `/admin/users`)에만 이 톤앤매너를 적용한다.
+
+**Files:**
+- Modify: `app/layout.tsx` (폰트를 Outfit → Pretendard로 교체)
+- Modify: `app/globals.css` (`--font-sans` 값 교체, 필요 시 Pretendard `@import` 추가)
+- Modify: `app/login/page.tsx` (폼을 `Card`로 감싸 중앙 정렬된 박스 레이아웃으로 변경)
+- Modify: `app/signup/page.tsx` (동일)
+- Modify: `app/admin/signups/page.tsx` (목록 영역을 `Card`/`CardHeader`/`CardContent`로 재구성)
+- Modify: `app/admin/users/page.tsx` (동일)
+- Modify: `package.json`, `package-lock.json` (Pretendard 관련 의존성 추가 시)
+
+**Interfaces:**
+- Consumes: `components/ui/card.tsx`(Task 1에서 이미 설치됨 — `Card`, `CardHeader`, `CardTitle`,
+  `CardDescription`, `CardAction`, `CardContent`, `CardFooter` 전부 존재), Task 13.5의 색상
+  토큰(`bg-card`, `text-muted-foreground`, `border` 등)
+- 기능적 동작(폼 제출, 로그인, 회원가입, 가입 승인/거절, 프리랜서 정보 저장)은 이 태스크에서
+  절대 바뀌면 안 된다 — 순수 레이아웃/타이포그래피 변경만 허용된다.
+
+- [ ] **Step 1: Pretendard 폰트 적용**
+
+`next/font/local`로 자체 호스팅하는 방식을 우선 시도한다:
+
+```bash
+npm install pretendard
+```
+
+`pretendard` 패키지가 실제로 제공하는 가변 폰트 파일 경로를 확인한 뒤(예:
+`node_modules/pretendard/dist/web/variable/PretendardVariable.woff2` — 버전에 따라 경로가
+다를 수 있으므로 `ls node_modules/pretendard/dist` 등으로 실제 경로를 먼저 확인할 것),
+`app/layout.tsx`에서 기존 `Outfit` import를 제거하고 다음과 같이 교체한다:
+
+```ts
+// app/layout.tsx
+import localFont from 'next/font/local'
+
+const pretendard = localFont({
+  src: '../node_modules/pretendard/dist/web/variable/PretendardVariable.woff2', // 실제 경로로 수정
+  variable: '--font-pretendard',
+  display: 'swap',
+})
+```
+
+`<html>`/`<body>`의 className에서 기존 `outfit.variable`를 `pretendard.variable`로 교체한다.
+`app/globals.css`의 `--font-sans: var(--font-outfit);`를 `--font-sans: var(--font-pretendard);`로
+바꾼다.
+
+**만약 next/font/local 경로 확인이 여의치 않으면** CDN 방식으로 대체한다(`app/globals.css`
+최상단에 추가):
+
+```css
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css');
+```
+
+이 경우 `--font-sans: 'Pretendard', ui-sans-serif, system-ui, sans-serif;`로 설정하고,
+`app/layout.tsx`의 `Outfit` import/변수 사용은 제거한다. 두 방식 중 하나만 선택해서 일관되게
+적용한다(혼용 금지).
+
+- [ ] **Step 2: 로그인/회원가입 화면을 카드형 중앙 정렬 레이아웃으로 변경**
+
+`app/login/page.tsx`, `app/signup/page.tsx`의 기존 `<form className="mx-auto mt-20 max-w-sm ...">`
+구조를, 폼 제출 로직(`handleSubmit`, `signIn`, `fetch` 호출 등)은 그대로 둔 채 아래처럼
+`Card`로 감싼다(형태 예시 — 실제 필드/에러 처리 로직은 기존 코드 유지):
+
+```tsx
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+
+// ...
+
+return (
+  <div className="flex min-h-svh items-center justify-center p-6">
+    <Card className="w-full max-w-sm">
+      <CardHeader>
+        <CardTitle>로그인</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* 기존 필드/버튼/에러 메시지 그대로 */}
+        </form>
+      </CardContent>
+    </Card>
+  </div>
+)
+```
+
+기존에 배치된 `<ThemeToggle />`(Task 13.5, `fixed top-4 right-4`)는 그대로 유지한다.
+
+- [ ] **Step 3: 관리자 화면(가입승인/프리랜서 정보)을 카드형 컨테이너로 재구성**
+
+`app/admin/signups/page.tsx`, `app/admin/users/page.tsx`의 최상위 컨테이너를 `Card`로 감싸고,
+현재 `<h1>` 제목을 `CardHeader`/`CardTitle`로, 목록(`<ul>`)을 `CardContent`로 옮긴다. 개별 행의
+기존 마크업(입력창, 버튼, 에러 메시지 등)과 기능은 그대로 유지하고, 컨테이너 레벨의 감싸는
+구조만 바꾼다. 가짜 통계 카드(방문자 수 등 대시보드 참고 이미지의 KPI 카드)는 이 두 화면에
+억지로 추가하지 않는다 — 해당 화면에 존재하지 않는 데이터이므로 범위 밖이다.
+
+- [ ] **Step 4: 수동 검증**
+
+Run: `npm run dev`. 4개 화면(`/login`, `/signup`, `/admin/signups`, `/admin/users`) 모두
+Pretendard 폰트가 적용되고, 로그인/회원가입은 화면 중앙에 카드형 박스로, 관리자 화면 2곳은
+카드형 컨테이너 안에 기존 콘텐츠가 담겨 보이는지 확인한다. 라이트/다크 모드 모두 확인하고,
+기존 기능(로그인, 회원가입, 가입 승인/거절, 프리랜서 정보 저장)이 그대로 동작하는지 확인한다.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app/layout.tsx app/globals.css app/login/page.tsx app/signup/page.tsx app/admin/signups/page.tsx app/admin/users/page.tsx package.json package-lock.json
+git commit -m "feat: 대시보드 톤앤매너 반영 - 카드 레이아웃 및 Pretendard 폰트 적용"
+```
+
+---
+
 ### Task 15: 관리자 — 공휴일 관리
 
 **Files:**
