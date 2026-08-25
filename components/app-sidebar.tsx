@@ -236,7 +236,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <BreadcrumbItem>
                 <BreadcrumbLink
                   render={<Link href="/dashboard" />}
-                  className="flex items-center gap-1 font-normal text-muted-foreground/60 hover:text-foreground"
+                  className="flex items-center gap-1 font-normal hover:text-foreground"
                 >
                   <HomeIcon className="size-4" />
                   홈
@@ -244,7 +244,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </BreadcrumbItem>
               {pathname !== '/dashboard' && (
                 <>
-                  <BreadcrumbSeparator className="text-muted-foreground/60" />
+                  <BreadcrumbSeparator />
                   <BreadcrumbItem>
                     <BreadcrumbPage>{getPageTitle(pathname)}</BreadcrumbPage>
                   </BreadcrumbItem>
