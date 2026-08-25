@@ -1668,6 +1668,199 @@ git commit -m "feat: 관리자 가입 승인/거절 기능 추가"
 
 ---
 
+### Task 13.5: UI 테마 통일 (tweakcn Supabase 프리셋 + 다크모드)
+
+> 사용자 요청으로 원래 계획(Task 1~25)에 없던 태스크가 Task 13과 14 사이에 추가됨. 지금까지
+> 만들어진 화면(로그인/회원가입/관리자 가입승인)에 새 테마를 적용하고, 이후 Task 14부터 만들어질
+> 모든 화면이 처음부터 이 테마 위에서 구축되도록 지금 시점에 선반영한다.
+
+**Files:**
+- Modify: `app/globals.css` (`:root`/`.dark` CSS 변수를 tweakcn "supabase" 프리셋 값으로 교체)
+- Create: `components/theme-provider.tsx` (next-themes 래퍼)
+- Create: `components/theme-toggle.tsx` (라이트/다크 전환 버튼)
+- Modify: `app/layout.tsx` (`ThemeProvider`로 감싸기, `suppressHydrationWarning` 추가)
+- Modify: `app/login/page.tsx`, `app/signup/page.tsx`, `app/admin/signups/page.tsx` (하드코딩된
+  `text-gray-500`, `text-red-600` 등을 테마 토큰(`text-muted-foreground`, `text-destructive` 등)으로
+  교체해 색상 사용을 통일)
+- Modify: `package.json` (`next-themes` 추가)
+
+**Interfaces:**
+- Produces: `ThemeProvider`(다크모드 컨텍스트), `ThemeToggle`(라이트/다크 전환 버튼, 이후 Task 23
+  GNB에 배치 가능)
+
+**출처**: https://tweakcn.com/editor/theme (Supabase 프리셋). shadcn/ui 레지스트리 형식의 원본
+JSON을 컨트롤러가 직접 다운로드해 확인한 정확한 값이다(추측/재현 값 아님):
+`https://tweakcn.com/r/themes/supabase.json`
+
+- [ ] **Step 1: globals.css의 CSS 변수를 Supabase 프리셋 값으로 교체**
+
+`:root` 블록(라이트 모드)을 아래 값으로 교체한다. 기존 `@theme inline` 매핑 블록과
+`@layer base` 블록 구조는 그대로 둔다.
+
+```css
+:root {
+  --background: oklch(0.9911 0 0);
+  --foreground: oklch(0.2046 0 0);
+  --card: oklch(0.9911 0 0);
+  --card-foreground: oklch(0.2046 0 0);
+  --popover: oklch(0.9911 0 0);
+  --popover-foreground: oklch(0.4386 0 0);
+  --primary: oklch(0.8348 0.1302 160.9080);
+  --primary-foreground: oklch(0.2626 0.0147 166.4589);
+  --secondary: oklch(0.9940 0 0);
+  --secondary-foreground: oklch(0.2046 0 0);
+  --muted: oklch(0.9461 0 0);
+  --muted-foreground: oklch(0.2435 0 0);
+  --accent: oklch(0.9461 0 0);
+  --accent-foreground: oklch(0.2435 0 0);
+  --destructive: oklch(0.5523 0.1927 32.7272);
+  --destructive-foreground: oklch(0.9934 0.0032 17.2118);
+  --border: oklch(0.9037 0 0);
+  --input: oklch(0.9731 0 0);
+  --ring: oklch(0.8348 0.1302 160.9080);
+  --chart-1: oklch(0.8348 0.1302 160.9080);
+  --chart-2: oklch(0.6231 0.1880 259.8145);
+  --chart-3: oklch(0.6056 0.2189 292.7172);
+  --chart-4: oklch(0.7686 0.1647 70.0804);
+  --chart-5: oklch(0.6959 0.1491 162.4796);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.9911 0 0);
+  --sidebar-foreground: oklch(0.5452 0 0);
+  --sidebar-primary: oklch(0.8348 0.1302 160.9080);
+  --sidebar-primary-foreground: oklch(0.2626 0.0147 166.4589);
+  --sidebar-accent: oklch(0.9461 0 0);
+  --sidebar-accent-foreground: oklch(0.2435 0 0);
+  --sidebar-border: oklch(0.9037 0 0);
+  --sidebar-ring: oklch(0.8348 0.1302 160.9080);
+}
+
+.dark {
+  --background: oklch(0.1822 0 0);
+  --foreground: oklch(0.9288 0.0126 255.5078);
+  --card: oklch(0.2046 0 0);
+  --card-foreground: oklch(0.9288 0.0126 255.5078);
+  --popover: oklch(0.2603 0 0);
+  --popover-foreground: oklch(0.7348 0 0);
+  --primary: oklch(0.4365 0.1044 156.7556);
+  --primary-foreground: oklch(0.9213 0.0135 167.1556);
+  --secondary: oklch(0.2603 0 0);
+  --secondary-foreground: oklch(0.9851 0 0);
+  --muted: oklch(0.2393 0 0);
+  --muted-foreground: oklch(0.7122 0 0);
+  --accent: oklch(0.3132 0 0);
+  --accent-foreground: oklch(0.9851 0 0);
+  --destructive: oklch(0.3123 0.0852 29.7877);
+  --destructive-foreground: oklch(0.9368 0.0045 34.3092);
+  --border: oklch(0.2809 0 0);
+  --input: oklch(0.2603 0 0);
+  --ring: oklch(0.8003 0.1821 151.7110);
+  --chart-1: oklch(0.8003 0.1821 151.7110);
+  --chart-2: oklch(0.7137 0.1434 254.6240);
+  --chart-3: oklch(0.7090 0.1592 293.5412);
+  --chart-4: oklch(0.8369 0.1644 84.4286);
+  --chart-5: oklch(0.7845 0.1325 181.9120);
+  --sidebar: oklch(0.1822 0 0);
+  --sidebar-foreground: oklch(0.6301 0 0);
+  --sidebar-primary: oklch(0.4365 0.1044 156.7556);
+  --sidebar-primary-foreground: oklch(0.9213 0.0135 167.1556);
+  --sidebar-accent: oklch(0.3132 0 0);
+  --sidebar-accent-foreground: oklch(0.9851 0 0);
+  --sidebar-border: oklch(0.2809 0 0);
+  --sidebar-ring: oklch(0.8003 0.1821 151.7110);
+}
+```
+
+기존 `--destructive-foreground`가 없었다면 `@theme inline` 블록에
+`--color-destructive-foreground: var(--destructive-foreground);` 매핑을 추가한다(shadcn
+컴포넌트가 이 토큰을 참조하는 경우 대비).
+
+프리셋의 폰트(`Outfit`, sans-serif)를 적용하려면 `app/layout.tsx`에서 `next/font/google`의
+`Outfit`을 로드해 `--font-sans` 변수에 연결한다(기존 Geist 폰트 대체). 자간(`letter-spacing:
+0.025em`)과 그림자(`shadow-*`) 값은 선택 적용— 색상 통일이 핵심이므로 필수는 아니다.
+
+- [ ] **Step 2: next-themes 설치 및 ThemeProvider 작성**
+
+```bash
+npm install next-themes
+```
+
+```tsx
+// components/theme-provider.tsx
+'use client'
+
+import { ThemeProvider as NextThemesProvider } from 'next-themes'
+import type { ComponentProps } from 'react'
+
+export function ThemeProvider({ children, ...props }: ComponentProps<typeof NextThemesProvider>) {
+  return (
+    <NextThemesProvider attribute="class" defaultTheme="system" enableSystem {...props}>
+      {children}
+    </NextThemesProvider>
+  )
+}
+```
+
+`app/layout.tsx`의 `<html>` 태그에 `suppressHydrationWarning`을 추가하고, 기존 `<Providers>`
+(Task 12의 `SessionProvider` 래퍼) 바깥을 이 `ThemeProvider`로 한 번 더 감싼다.
+
+- [ ] **Step 3: 라이트/다크 전환 버튼 작성**
+
+```tsx
+// components/theme-toggle.tsx
+'use client'
+
+import { useTheme } from 'next-themes'
+import { Moon, Sun } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
+export function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme()
+  return (
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+      aria-label="테마 전환"
+    >
+      <Sun className="h-4 w-4 dark:hidden" />
+      <Moon className="hidden h-4 w-4 dark:block" />
+    </Button>
+  )
+}
+```
+
+아직 공용 GNB가 없으므로(Task 23에서 생성 예정), 이번 태스크에서는 `app/login/page.tsx`와
+`app/signup/page.tsx` 화면 우측 상단에 임시로 `<ThemeToggle />`을 배치한다. Task 23에서 GNB를
+만들 때 이 컴포넌트를 그 안으로 옮긴다(중복 배치하지 않도록 유의).
+
+- [ ] **Step 4: 기존 화면 색상 토큰 통일**
+
+`app/login/page.tsx`, `app/signup/page.tsx`, `app/admin/signups/page.tsx`를 훑어서 하드코딩된
+Tailwind 색상 클래스(`text-gray-500`, `text-red-600`, `border` 등)를 테마 토큰 기반 클래스로
+바꾼다:
+- 보조 텍스트: `text-gray-500` → `text-muted-foreground`
+- 에러 텍스트: `text-red-600` / `text-red-500` → `text-destructive`
+- 이미 `border`, `rounded` 등 컴포넌트 프리미티브를 쓰고 있는 부분은 변경하지 않는다(그 자체로
+  이미 테마 토큰을 사용 중).
+
+기능적 동작(폼 제출, 에러 표시 로직 등)은 절대 바꾸지 않는다 — 클래스명 치환만 한다.
+
+- [ ] **Step 5: 수동 검증**
+
+Run: `npm run dev`. `/login`, `/signup`, (관리자 로그인 후) `/admin/signups` 3개 화면에서
+라이트 모드 색상이 Supabase 프리셋(연한 청록색 primary)으로 바뀌었는지, 우측 상단
+`ThemeToggle`로 다크모드 전환 시 3개 화면 모두 다크 배경/텍스트로 정상 전환되는지, 다크모드에서
+기존 기능(로그인, 회원가입, 가입 승인/거절)이 그대로 동작하는지 확인.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app/globals.css app/layout.tsx components/theme-provider.tsx components/theme-toggle.tsx app/login/page.tsx app/signup/page.tsx app/admin/signups/page.tsx package.json package-lock.json
+git commit -m "feat: tweakcn Supabase 테마 및 다크모드 적용"
+```
+
+---
+
 ### Task 14: 관리자 — 프리랜서 정보 관리
 
 **Files:**
