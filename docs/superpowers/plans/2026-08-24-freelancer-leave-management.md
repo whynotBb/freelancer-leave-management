@@ -1886,7 +1886,7 @@ git commit -m "feat: tweakcn Supabase 테마 및 다크모드 적용"
 - Produces: `GET /api/admin/users`, `PATCH /api/admin/users/:id`
   `{ position?, department?, defaultApproverId? }`
 
-- [ ] **Step 1: 목록/수정 API 작성**
+- [x] **Step 1: 목록/수정 API 작성**
 
 ```ts
 // app/api/admin/users/route.ts
@@ -1898,10 +1898,25 @@ import { requireAdmin } from '@/lib/auth/session'
 
 export async function GET() {
   await requireAdmin()
-  const list = await db.select().from(users).where(eq(users.signupStatus, 'APPROVED'))
+  const list = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      position: users.position,
+      department: users.department,
+      defaultApproverId: users.defaultApproverId,
+      hireDate: users.hireDate,
+    })
+    .from(users)
+    .where(eq(users.signupStatus, 'APPROVED'))
   return NextResponse.json(list)
 }
 ```
+
+> 완료 노트: Task 13 리뷰에서 드러난 `passwordHash` 노출 문제(원본 브리프의
+> `db.select().from(users)` 패턴)를 반복하지 않도록, 디스패치 시점에 명시적 컬럼 선택으로
+> 미리 수정 지시함. `role`/`signupStatus`도 함께 제외되어 한 번 더 안전함.
 
 ```ts
 // app/api/admin/users/[id]/route.ts
@@ -1930,7 +1945,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 ```
 
-- [ ] **Step 2: 관리자 프리랜서 관리 화면**
+- [x] **Step 2: 관리자 프리랜서 관리 화면**
 
 ```tsx
 // app/admin/users/page.tsx
@@ -2008,12 +2023,15 @@ export default function AdminUsersPage() {
 }
 ```
 
-- [ ] **Step 3: 수동 검증**
+- [x] **Step 3: 수동 검증**
 
 Run: `npm run dev`, `/admin/users`에서 직급/부서/기본 결재자를 저장하고 새로고침 후 값이
 유지되는지 확인.
 
-- [ ] **Step 4: Commit**
+> 완료 노트(park): `defaultApproverId`가 실제 존재하는 사용자 id인지 검증하지 않음, 필드를
+> 비울 때 `null`이 아닌 빈 문자열로 저장됨 — 둘 다 경미한 사항으로 전체 브랜치 리뷰 때 정리.
+
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/api/admin/users app/admin/users
