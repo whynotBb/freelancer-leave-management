@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 
 interface FreelancerUser {
@@ -61,43 +62,49 @@ export default function AdminUsersPage() {
 
   return (
     <div className="mx-auto mt-10 max-w-3xl">
-      <h1 className="mb-4 text-xl font-semibold">프리랜서 정보 관리</h1>
-      {users.length === 0 && <p className="text-sm text-muted-foreground">승인된 프리랜서가 없습니다.</p>}
-      <ul className="space-y-3">
-        {users.map((user) => (
-          <li key={user.id} className="flex flex-col gap-2 rounded border p-3">
-            <div className="flex items-center gap-3">
-              <div className="w-40">
-                <p className="font-medium">{user.name}</p>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
-                <p className="text-xs text-muted-foreground">입사일: {user.hireDate ?? '-'}</p>
-              </div>
-              <Input
-                placeholder="직급"
-                value={user.position ?? ''}
-                onChange={(e) => updateField(user.id, 'position', e.target.value)}
-              />
-              <Input
-                placeholder="부서"
-                value={user.department ?? ''}
-                onChange={(e) => updateField(user.id, 'department', e.target.value)}
-              />
-              <Input
-                placeholder="기본 결재자 ID"
-                value={user.defaultApproverId ?? ''}
-                onChange={(e) => updateField(user.id, 'defaultApproverId', e.target.value)}
-              />
-              <Button onClick={() => save(user)} disabled={savingId === user.id}>
-                {savingId === user.id ? '저장 중...' : '저장'}
-              </Button>
-            </div>
-            {errors[user.id] && <p className="text-sm text-destructive">{errors[user.id]}</p>}
-            {savedId === user.id && !errors[user.id] && (
-              <p className="text-sm text-muted-foreground">저장되었습니다.</p>
-            )}
-          </li>
-        ))}
-      </ul>
+      <Card>
+        <CardHeader>
+          <CardTitle>프리랜서 정보 관리</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {users.length === 0 && <p className="text-sm text-muted-foreground">승인된 프리랜서가 없습니다.</p>}
+          <ul className="space-y-3">
+            {users.map((user) => (
+              <li key={user.id} className="flex flex-col gap-2 rounded border p-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-40">
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <p className="text-xs text-muted-foreground">입사일: {user.hireDate ?? '-'}</p>
+                  </div>
+                  <Input
+                    placeholder="직급"
+                    value={user.position ?? ''}
+                    onChange={(e) => updateField(user.id, 'position', e.target.value)}
+                  />
+                  <Input
+                    placeholder="부서"
+                    value={user.department ?? ''}
+                    onChange={(e) => updateField(user.id, 'department', e.target.value)}
+                  />
+                  <Input
+                    placeholder="기본 결재자 ID"
+                    value={user.defaultApproverId ?? ''}
+                    onChange={(e) => updateField(user.id, 'defaultApproverId', e.target.value)}
+                  />
+                  <Button onClick={() => save(user)} disabled={savingId === user.id}>
+                    {savingId === user.id ? '저장 중...' : '저장'}
+                  </Button>
+                </div>
+                {errors[user.id] && <p className="text-sm text-destructive">{errors[user.id]}</p>}
+                {savedId === user.id && !errors[user.id] && (
+                  <p className="text-sm text-muted-foreground">저장되었습니다.</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
     </div>
   )
 }

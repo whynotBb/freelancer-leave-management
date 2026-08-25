@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Outfit } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./providers";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
+const pretendard = localFont({
+  src: "../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
+  variable: "--font-pretendard",
+  display: "swap",
+  weight: "45 920",
 });
 
 const geistMono = Geist_Mono({
@@ -23,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${outfit.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${pretendard.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">

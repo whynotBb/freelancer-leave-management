@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -34,27 +35,35 @@ export default function LoginPage() {
       <div className="fixed top-4 right-4">
         <ThemeToggle />
       </div>
-      <form onSubmit={handleSubmit} className="mx-auto mt-20 max-w-sm space-y-4">
-        <h1 className="text-xl font-semibold">로그인</h1>
-        <div>
-          <Label htmlFor="email">이메일</Label>
-          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </div>
-        <div>
-          <Label htmlFor="password">비밀번호</Label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        <Button type="submit" className="w-full">
-          로그인
-        </Button>
-      </form>
+      <div className="flex min-h-svh items-center justify-center p-6">
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle>로그인</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="email">이메일</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </div>
+              <div>
+                <Label htmlFor="password">비밀번호</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" className="w-full">
+                로그인
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </>
   )
 }

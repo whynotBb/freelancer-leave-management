@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 
 interface PendingUser {
@@ -45,30 +46,36 @@ export default function AdminSignupsPage() {
 
   return (
     <div className="mx-auto mt-10 max-w-2xl">
-      <h1 className="mb-4 text-xl font-semibold">가입 승인 대기</h1>
-      {pending.length === 0 && <p className="text-sm text-muted-foreground">대기 중인 신청이 없습니다.</p>}
-      <ul className="space-y-3">
-        {pending.map((user) => (
-          <li key={user.id} className="flex flex-col gap-2 rounded border p-3">
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <p className="font-medium">{user.name}</p>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
-              </div>
-              <Input
-                type="date"
-                className="w-40"
-                onChange={(e) => setHireDates((prev) => ({ ...prev, [user.id]: e.target.value }))}
-              />
-              <Button onClick={() => decide(user.id, 'APPROVED')}>승인</Button>
-              <Button variant="outline" onClick={() => decide(user.id, 'REJECTED')}>
-                거절
-              </Button>
-            </div>
-            {errors[user.id] && <p className="text-sm text-destructive">{errors[user.id]}</p>}
-          </li>
-        ))}
-      </ul>
+      <Card>
+        <CardHeader>
+          <CardTitle>가입 승인 대기</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {pending.length === 0 && <p className="text-sm text-muted-foreground">대기 중인 신청이 없습니다.</p>}
+          <ul className="space-y-3">
+            {pending.map((user) => (
+              <li key={user.id} className="flex flex-col gap-2 rounded border p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                  </div>
+                  <Input
+                    type="date"
+                    className="w-40"
+                    onChange={(e) => setHireDates((prev) => ({ ...prev, [user.id]: e.target.value }))}
+                  />
+                  <Button onClick={() => decide(user.id, 'APPROVED')}>승인</Button>
+                  <Button variant="outline" onClick={() => decide(user.id, 'REJECTED')}>
+                    거절
+                  </Button>
+                </div>
+                {errors[user.id] && <p className="text-sm text-destructive">{errors[user.id]}</p>}
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
     </div>
   )
 }
