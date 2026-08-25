@@ -2187,7 +2187,7 @@ git commit -m "feat: 대시보드 톤앤매너 반영 - 카드 레이아웃 및 
   `app/admin/users/page.tsx`는 **수정하지 않는다** — 기존 콘텐츠는 그대로 두고, 이 태스크는
   전체를 감싸는 레이아웃 셸(로그인/회원가입 제외)만 추가/변경한다.
 
-- [ ] **Step 1: shadcn sidebar 컴포넌트 설치**
+- [x] **Step 1: shadcn sidebar 컴포넌트 설치**
 
 ```bash
 npx shadcn@latest add sidebar
@@ -2201,7 +2201,7 @@ npx shadcn@latest add sidebar
 export된 컴포넌트 이름을 확인하고 그것을 사용할 것** — 아래 Step 2 예시 코드는 표준 shadcn
 sidebar API를 기준으로 한 참고 형태이며, 실제 설치 결과와 다르면 실제 설치 결과를 따른다.
 
-- [ ] **Step 2: 앱 사이드바 컴포넌트 작성 (역할 기반)**
+- [x] **Step 2: 앱 사이드바 컴포넌트 작성 (역할 기반)**
 
 ```tsx
 // components/app-sidebar.tsx
@@ -2300,7 +2300,13 @@ export function AppSidebar() {
 현재 이 프로젝트에는 로그아웃을 수행할 수 있는 UI가 어디에도 없다 — 이 사이드바 푸터가
 그 최초 진입점이 된다(범위 확장이 아니라 실제로 비어있던 기능 구멍을 메우는 것).
 
-- [ ] **Step 3: 루트 레이아웃에 사이드바 연결 (로그인/회원가입 제외)**
+> 완료 노트: 실제 설치된 `components/ui/sidebar.tsx`는 표준 shadcn과 달리 base-ui 기반이라
+> `asChild` 대신 `render={<Link .../>}` prop을 사용해야 했다(같은 커밋의 `sheet.tsx`에 이미
+> 쓰이던 패턴과 동일하게 적용, 리뷰에서 일관성 확인됨). shadcn CLI가 `button.tsx`/`input.tsx`를
+> base-ui 버전으로 덮어쓰려 한 것은 앱 전체의 기존 컴포넌트를 깨뜨릴 위험이 있어 거부하고
+> 기존 radix-ui 버전을 유지했다(리뷰에서 두 파일이 diff에 없음을 확인).
+
+- [x] **Step 3: 루트 레이아웃에 사이드바 연결 (로그인/회원가입 제외)**
 
 `app/layout.tsx`(Task 12의 `<Providers>` 래핑, Task 13.5의 `<ThemeProvider>` 래핑 유지)에서
 `<Providers>` 내부를 아래처럼 감싼다. `AppSidebar` 자체가 `session.user`가 없으면 `null`을
@@ -2327,12 +2333,17 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/s
 </SidebarProvider>
 ```
 
-- [ ] **Step 4: Task 23 절 갱신 (구현 대상에서 제외)**
+> 완료 노트: `app/layout.tsx`는 `metadata` export가 있는 서버 컴포넌트라 `useSession`을 직접
+> 쓸 수 없다는 제약이 있어, `AppSidebar`를 감싸는 `AppShell`(클라이언트 컴포넌트)로 분리해
+> `components/app-sidebar.tsx` 안에 함께 두는 방식으로 처리했다(브리프가 이 판단을 구현자에게
+> 위임했었고, 리뷰에서 최소하고 타당한 해법으로 확인됨).
+
+- [x] **Step 4: Task 23 절 갱신 (구현 대상에서 제외)**
 
 본 계획 문서의 "Task 23: GNB 레이아웃" 절 전체를, "이 태스크는 Task 13.7로 대체되어 더 이상
 별도로 구현하지 않는다"는 안내 문구로 교체한다. 이후 Task 24로 넘어갈 때 Task 23은 건너뛴다.
 
-- [ ] **Step 5: 수동 검증**
+- [x] **Step 5: 수동 검증**
 
 Run: `npm run dev`. 관리자 계정으로 로그인 후 좌측에 사이드바(공통 메뉴 3개 + 관리자 메뉴
 2개, 활성 라우트 강조, 하단 사용자 정보+로그아웃)가 보이는지 확인한다. 사이드바의 로그아웃
@@ -2343,12 +2354,20 @@ Run: `npm run dev`. 관리자 계정으로 로그인 후 좌측에 사이드바(
 일치하는지 확인한다. `/login`, `/signup`은 사이드바 없이 기존 카드 레이아웃 그대로 보이는지
 확인한다.
 
-- [ ] **Step 6: Commit**
+> 완료 노트: 구현 에이전트가 실제 브라우저(browse)로 관리자 로그인 후 사이드바(공통+관리자
+> 메뉴, 활성 강조), 로그아웃, 신규 승인 계정으로 프리랜서 뷰(관리자 메뉴 미노출) 확인. 라이트/
+> 다크 색상, `/login` 무변화도 스크린샷으로 확인됨.
+
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/layout.tsx components/app-sidebar.tsx components/ui components.json docs/superpowers/plans package.json package-lock.json
 git commit -m "feat: 역할 기반 좌측 사이드바 내비게이션 추가 (Task 23 대체)"
 ```
+
+> 완료 노트: 리뷰에서 발견된 lint 경고(신규 생성된 `hooks/use-mobile.ts`의
+> `react-hooks/set-state-in-effect`)는 fix round에서 `eslint-disable-next-line` + 설명
+> 주석으로 해결함(로직 변경 없음).
 
 ---
 
