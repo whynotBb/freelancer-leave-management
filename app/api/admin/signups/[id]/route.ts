@@ -16,7 +16,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     await requireSuperAdmin()
     const { id } = await params
-    const body = await request.json()
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: '입력값이 올바르지 않습니다.' }, { status: 400 })
+    }
     const parsed = decisionSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: '입력값이 올바르지 않습니다.' }, { status: 400 })
@@ -37,8 +42,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       .set({
         signupStatus: parsed.data.decision,
         role: parsed.data.role,
-        hireDate: isFreelancer ? parsed.data.hireDate : undefined,
-        defaultApproverId: isFreelancer ? parsed.data.defaultApproverId : undefined,
+        hireDate: isFreelancer ? parsed.data.hireDate : null,
+        defaultApproverId: isFreelancer ? parsed.data.defaultApproverId : null,
       })
       .where(eq(users.id, Number(id)))
 

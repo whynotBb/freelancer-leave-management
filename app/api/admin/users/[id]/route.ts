@@ -28,7 +28,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { id } = await params
     const targetId = Number(id)
 
-    const parsed = updateSchema.safeParse(await request.json())
+    let rawBody: unknown
+    try {
+      rawBody = await request.json()
+    } catch {
+      return NextResponse.json({ error: '입력값이 올바르지 않습니다.' }, { status: 400 })
+    }
+    const parsed = updateSchema.safeParse(rawBody)
     if (!parsed.success) {
       return NextResponse.json({ error: '입력값이 올바르지 않습니다.' }, { status: 400 })
     }
@@ -39,12 +45,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: '대상을 찾을 수 없습니다.' }, { status: 404 })
     }
 
+    if (target.role !== 'FREELANCER') {
+      return NextResponse.json({ error: '프리랜서만 수정할 수 있습니다.' }, { status: 400 })
+    }
+
     if (role !== 'SUPER_ADMIN' && target.defaultApproverId !== callerId) {
       return NextResponse.json({ error: '이 프리랜서를 수정할 권한이 없습니다.' }, { status: 403 })
     }
 
     if (body.defaultApproverId !== undefined && role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: '기본 결재자 변경은 최고관리자만 가능합니다.' }, { status: 403 })
+    }
+
+    if (body.defaultApproverId !== undefined) {
+      const [approver] = await db.select().from(users).where(eq(users.id, body.defaultApproverId))
+      if (!approver || (approver.role !== 'APPROVER' && approver.role !== 'SUPER_ADMIN')) {
+        return NextResponse.json({ error: '유효하지 않은 결재자입니다.' }, { status: 400 })
+      }
     }
 
     const needsReason = body.hireDate !== undefined || body.grantedTotal !== undefined || body.usedTotal !== undefined
