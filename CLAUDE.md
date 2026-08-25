@@ -51,3 +51,13 @@
 - **비즈니스 로직 변경은 신중하게**: 연차 계산·결재 상태 전이처럼 설계 문서 5~7장에 명시된
   규칙은 코드 리뷰 없이 임의로 바꾸지 않습니다.
 - 커밋 메시지, 코드 주석, 문서화는 한국어로 작성하고 변수명·함수명은 영어로 작성합니다.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
