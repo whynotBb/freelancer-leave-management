@@ -1,0 +1,53 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+export default function LoginPage() {
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    const result = await signIn('credentials', { email, password, redirect: false })
+    if (result?.error) {
+      // NextAuth v5 beta는 authorize() 내부에서 던진 커스텀 메시지를 그대로 전달하지 않고
+      // 일반화된 에러 코드로 치환하므로, 세 가지 실패 케이스(비밀번호 오류/승인 대기/거절)를
+      // 하나의 안내 문구로 통합해 보여준다.
+      setError('이메일/비밀번호가 올바르지 않거나, 가입 승인이 완료되지 않았습니다.')
+      return
+    }
+    router.push('/dashboard')
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mx-auto mt-20 max-w-sm space-y-4">
+      <h1 className="text-xl font-semibold">로그인</h1>
+      <div>
+        <Label htmlFor="email">이메일</Label>
+        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      </div>
+      <div>
+        <Label htmlFor="password">비밀번호</Label>
+        <Input
+          id="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </div>
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <Button type="submit" className="w-full">
+        로그인
+      </Button>
+    </form>
+  )
+}
