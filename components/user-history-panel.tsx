@@ -68,7 +68,7 @@ export function UserHistoryPanel({ open, onOpenChange, user }: UserHistoryPanelP
                 <p>{user.defaultApproverName ?? '-'}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">사용가능 연차</p>
+                <p className="text-xs text-muted-foreground">발생 연차</p>
                 <p>{user.granted}</p>
               </div>
               <div>
