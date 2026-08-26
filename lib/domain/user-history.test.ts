@@ -176,7 +176,7 @@ describe('buildHistoryTimeline', () => {
     expect(result[0].date).toBe('2026-07-02 01:30')
   })
 
-  it('세 출처를 합쳐 createdAt 기준 내림차순으로 정렬한다', () => {
+  it('네 출처를 합쳐 createdAt 기준 내림차순으로 정렬한다', () => {
     const result = buildHistoryTimeline({
       grants: [
         {
@@ -207,7 +207,45 @@ describe('buildHistoryTimeline', () => {
           changedByName: '관리자',
         },
       ],
+      exceptions: [
+        {
+          periodStart: '2026-07-01',
+          reason: '결근',
+          createdByName: '관리자',
+          createdAt: '2026-07-01T00:00:00.000Z',
+        },
+      ],
     })
-    expect(result.map((r) => r.category)).toEqual(['사용', '결재자 변경', '발생'])
+    expect(result.map((r) => r.category)).toEqual(['만근 예외', '사용', '결재자 변경', '발생'])
+  })
+
+  it('만근 예외 행은 "만근 예외"로 분류하고 평가월 구간을 detail에 표시한다', () => {
+    const result = buildHistoryTimeline({
+      grants: [],
+      usages: [],
+      approverChanges: [],
+      exceptions: [
+        {
+          periodStart: '2026-08-25',
+          reason: '개인 사정으로 결근',
+          createdByName: '관리자',
+          createdAt: '2026-08-20T09:00:00.000Z',
+        },
+      ],
+    })
+    expect(result).toEqual([
+      {
+        category: '만근 예외',
+        date: '2026-08-20 18:00',
+        detail: '2026-08-25 ~ 2026-09-25 미발생',
+        reason: '개인 사정으로 결근',
+        actorName: '관리자',
+      },
+    ])
+  })
+
+  it('exceptions를 생략해도 기존 호출부와 동일하게 동작한다', () => {
+    const result = buildHistoryTimeline({ grants: [], usages: [], approverChanges: [] })
+    expect(result).toEqual([])
   })
 })

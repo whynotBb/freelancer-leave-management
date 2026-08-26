@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { db } from '@/lib/db/client'
-import { approverChanges, leaveGrants, leaveRequests, users } from '@/lib/db/schema'
+import { approverChanges, attendanceExceptions, leaveGrants, leaveRequests, users } from '@/lib/db/schema'
 import { buildHistoryTimeline, type HistoryEntry } from '@/lib/domain/user-history'
 
 export async function getUserHistory(userId: number): Promise<HistoryEntry[]> {
@@ -50,6 +50,18 @@ export async function getUserHistory(userId: number): Promise<HistoryEntry[]> {
     .leftJoin(changer, eq(approverChanges.changedBy, changer.id))
     .where(eq(approverChanges.userId, userId))
 
+  const exceptionCreator = alias(users, 'exceptionCreator')
+  const exceptionRows = await db
+    .select({
+      periodStart: attendanceExceptions.periodStart,
+      reason: attendanceExceptions.reason,
+      createdByName: exceptionCreator.name,
+      createdAt: attendanceExceptions.createdAt,
+    })
+    .from(attendanceExceptions)
+    .leftJoin(exceptionCreator, eq(attendanceExceptions.createdBy, exceptionCreator.id))
+    .where(eq(attendanceExceptions.userId, userId))
+
   return buildHistoryTimeline({
     grants: grantRows.map((g) => ({ ...g, createdAt: g.createdAt.toISOString() })),
     usages: usageRows.map((u) => ({ ...u, createdAt: u.createdAt.toISOString() })),
@@ -59,5 +71,6 @@ export async function getUserHistory(userId: number): Promise<HistoryEntry[]> {
       afterApproverName: c.afterApproverName ?? '-',
       changedByName: c.changedByName ?? '-',
     })),
+    exceptions: exceptionRows.map((ex) => ({ ...ex, createdAt: ex.createdAt.toISOString() })),
   })
 }
