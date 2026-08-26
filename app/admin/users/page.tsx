@@ -599,6 +599,7 @@ export default function AdminUsersPage() {
       />
 
       <AttendanceExceptionDialog
+        key={attendanceExceptionUserId ?? 'none'}
         open={attendanceExceptionUserId !== null}
         onOpenChange={(open) => {
           if (!open) {

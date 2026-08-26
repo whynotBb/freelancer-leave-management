@@ -12,7 +12,11 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { DatePicker } from '@/components/date-picker'
-import { getMonthlyAnniversaryIndex, getMonthlyEvaluationPeriod } from '@/lib/domain/leave-cycle'
+import {
+  findMonthlyEvaluationPeriod,
+  getMonthlyAnniversaryIndex,
+  getMonthlyEvaluationPeriod,
+} from '@/lib/domain/leave-cycle'
 
 interface AttendanceExceptionDialogProps {
   open: boolean
@@ -60,6 +64,8 @@ export function AttendanceExceptionDialog({
     onOpenChange(next)
   }
 
+  const resolvedPeriod = date && hireDate ? findMonthlyEvaluationPeriod(hireDate, date) : null
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
@@ -77,6 +83,15 @@ export function AttendanceExceptionDialog({
             minDate={computeMinDate(hireDate)}
             className="w-full"
           />
+          {resolvedPeriod && (
+            <p className="text-sm text-muted-foreground">
+              선택한 날짜는{' '}
+              <strong className="font-medium text-foreground">
+                {resolvedPeriod.start} ~ {resolvedPeriod.end}
+              </strong>{' '}
+              평가월로 등록됩니다.
+            </p>
+          )}
           <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
