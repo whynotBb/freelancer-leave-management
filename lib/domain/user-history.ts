@@ -37,8 +37,15 @@ interface SortableEntry {
   sortKey: string
 }
 
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000
+
+// DB의 timestamp는 UTC로 저장되므로, 표시 직전에 KST(UTC+9, 서머타임 없음)로 변환한다.
+// Date.prototype.get*(로컬 타임존 기준) 대신 getUTC*를 써서 실행 환경의 시스템 타임존과
+// 무관하게 항상 동일한 결과가 나오도록 한다.
 function formatDateTime(iso: string): string {
-  return iso.slice(0, 16).replace('T', ' ')
+  const kst = new Date(new Date(iso).getTime() + KST_OFFSET_MS)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${kst.getUTCFullYear()}-${pad(kst.getUTCMonth() + 1)}-${pad(kst.getUTCDate())} ${pad(kst.getUTCHours())}:${pad(kst.getUTCMinutes())}`
 }
 
 function formatAmount(amount: number): string {

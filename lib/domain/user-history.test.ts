@@ -20,7 +20,7 @@ describe('buildHistoryTimeline', () => {
     expect(result).toEqual([
       {
         category: '발생',
-        date: '2026-04-01 00:00',
+        date: '2026-04-01 09:00',
         detail: '+1일',
         reason: '-',
         actorName: null,
@@ -46,7 +46,7 @@ describe('buildHistoryTimeline', () => {
     expect(result).toEqual([
       {
         category: '연차 조정',
-        date: '2026-05-01 09:00',
+        date: '2026-05-01 18:00',
         detail: '-2일',
         reason: '초과 지급 보정',
         actorName: '관리자',
@@ -90,7 +90,7 @@ describe('buildHistoryTimeline', () => {
     expect(result).toEqual([
       {
         category: '입사일 변경',
-        date: '2026-05-01 09:00',
+        date: '2026-05-01 18:00',
         detail: '-',
         reason: '입사일 수정',
         actorName: '관리자',
@@ -114,7 +114,7 @@ describe('buildHistoryTimeline', () => {
       approverChanges: [],
     })
     expect(result[0].category).toBe('연차 조정')
-    expect(result[0].date).toBe('2026-06-01 09:15')
+    expect(result[0].date).toBe('2026-06-01 18:15')
     expect(result[0].detail).toBe('+3일')
   })
 
@@ -152,11 +152,28 @@ describe('buildHistoryTimeline', () => {
     })
     expect(result[0]).toEqual({
       category: '결재자 변경',
-      date: '2026-07-01 09:05',
+      date: '2026-07-01 18:05',
       detail: '미지정 → 김결재',
       reason: '신규 배정',
       actorName: '관리자',
     })
+  })
+
+  it('UTC 자정 무렵 시각은 KST 기준으로 날짜가 넘어간다', () => {
+    const result = buildHistoryTimeline({
+      grants: [],
+      usages: [],
+      approverChanges: [
+        {
+          createdAt: '2026-07-01T16:30:00.000Z',
+          beforeApproverName: '김결재',
+          afterApproverName: '이결재',
+          reason: '야간 재배정',
+          changedByName: '관리자',
+        },
+      ],
+    })
+    expect(result[0].date).toBe('2026-07-02 01:30')
   })
 
   it('세 출처를 합쳐 createdAt 기준 내림차순으로 정렬한다', () => {
