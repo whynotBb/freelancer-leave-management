@@ -64,13 +64,13 @@ export function UserHistoryPanel({ open, onOpenChange, user }: UserHistoryPanelP
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="data-[side=right]:w-[95vw] data-[side=right]:sm:max-w-none lg:data-[side=right]:w-1/4">
-        <SheetHeader>
+        <SheetHeader className="border-b border-border">
           <SheetTitle>{user?.name ?? ''}</SheetTitle>
           <SheetDescription>{user?.email ?? ''}</SheetDescription>
         </SheetHeader>
         {user && (
           <div className="flex min-h-0 flex-1 flex-col px-4 pb-4">
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-2 gap-3 border-b border-border pt-4 pb-4 text-sm">
               <div>
                 <p className="text-xs text-muted-foreground">입사일</p>
                 <p>{user.hireDate ?? '-'}</p>
