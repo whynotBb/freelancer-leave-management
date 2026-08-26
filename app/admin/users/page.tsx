@@ -517,7 +517,7 @@ export default function AdminUsersPage() {
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="outline"
-                          disabled={!user.canEdit}
+                          disabled={!user.canEdit || !user.hireDate}
                           onClick={() => setAttendanceExceptionUserId(user.id)}
                         >
                           만근 예외
@@ -563,7 +563,7 @@ export default function AdminUsersPage() {
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button
                     variant="outline"
-                    disabled={!user.canEdit}
+                    disabled={!user.canEdit || !user.hireDate}
                     onClick={() => setAttendanceExceptionUserId(user.id)}
                   >
                     만근 예외
@@ -607,6 +607,7 @@ export default function AdminUsersPage() {
           }
         }}
         userName={users.find((u) => u.id === attendanceExceptionUserId)?.name ?? ''}
+        hireDate={users.find((u) => u.id === attendanceExceptionUserId)?.hireDate ?? null}
         onConfirm={confirmAttendanceException}
         submitting={attendanceExceptionSubmitting}
         error={attendanceExceptionError}

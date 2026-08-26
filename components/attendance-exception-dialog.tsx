@@ -12,11 +12,13 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { DatePicker } from '@/components/date-picker'
+import { getMonthlyAnniversaryIndex, getMonthlyEvaluationPeriod } from '@/lib/domain/leave-cycle'
 
 interface AttendanceExceptionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   userName: string
+  hireDate: string | null
   onConfirm: (date: string, reason: string) => void
   submitting?: boolean
   error?: string | null
@@ -26,10 +28,23 @@ function today(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+// 오늘이 평가월 경계일(자동 발생 배치가 오늘 밤 처리할 평가월의 마지막 날)이면, 그 평가월의
+// 시작일부터 선택할 수 있어야 관리자가 "이번 달은 만근 아님"을 당일 안에 등록할 수 있다.
+// 경계일이 아니면 오늘부터 선택해도 충분하다(진행 중인 평가월은 아직 마감 전이라 오늘 날짜로도
+// 정확히 그 평가월로 해석된다).
+function computeMinDate(hireDate: string | null): string {
+  const todayStr = today()
+  if (!hireDate) return todayStr
+  const anniversaryIndex = getMonthlyAnniversaryIndex(hireDate, todayStr)
+  if (anniversaryIndex === null) return todayStr
+  return getMonthlyEvaluationPeriod(hireDate, anniversaryIndex).start
+}
+
 export function AttendanceExceptionDialog({
   open,
   onOpenChange,
   userName,
+  hireDate,
   onConfirm,
   submitting = false,
   error = null,
@@ -56,7 +71,12 @@ export function AttendanceExceptionDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <DatePicker value={date || undefined} onChange={setDate} minDate={today()} className="w-full" />
+          <DatePicker
+            value={date || undefined}
+            onChange={setDate}
+            minDate={computeMinDate(hireDate)}
+            className="w-full"
+          />
           <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
