@@ -232,51 +232,55 @@ export default function AdminUsersPage() {
     const remaining = (Number(draft.grantedTotal) || 0) - (Number(draft.usedTotal) || 0)
     return (
       <>
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">입사일</p>
-          <DatePicker
-            value={draft.hireDate || undefined}
-            onChange={(value) => updateDraft(user.id, 'hireDate', value)}
-            placeholder="입사일 선택"
-            className="w-full"
-          />
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">기본 결재자</p>
-          {role === 'SUPER_ADMIN' ? (
-            <ApproverCombobox
-              value={user.defaultApproverId}
-              approvers={approvers}
-              onChange={(id) => requestApproverChange(user, id)}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">입사일</p>
+            <DatePicker
+              value={draft.hireDate || undefined}
+              onChange={(value) => updateDraft(user.id, 'hireDate', value)}
+              placeholder="입사일 선택"
               className="w-full"
             />
-          ) : (
-            <p className="text-sm">{user.defaultApproverName ?? '-'}</p>
-          )}
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">기본 결재자</p>
+            {role === 'SUPER_ADMIN' ? (
+              <ApproverCombobox
+                value={user.defaultApproverId}
+                approvers={approvers}
+                onChange={(id) => requestApproverChange(user, id)}
+                className="w-full"
+              />
+            ) : (
+              <p className="text-sm">{user.defaultApproverName ?? '-'}</p>
+            )}
+          </div>
         </div>
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">발생 연차</p>
-          <Input
-            type="number"
-            step="0.5"
-            disabled={disabled}
-            value={draft.grantedTotal}
-            onChange={(e) => updateDraft(user.id, 'grantedTotal', e.target.value)}
-          />
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">사용 연차</p>
-          <Input
-            type="number"
-            step="0.5"
-            disabled={disabled}
-            value={draft.usedTotal}
-            onChange={(e) => updateDraft(user.id, 'usedTotal', e.target.value)}
-          />
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">미사용 연차</p>
-          <p className="text-sm text-muted-foreground">{remaining}</p>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">발생 연차</p>
+            <Input
+              type="number"
+              step="0.5"
+              disabled={disabled}
+              value={draft.grantedTotal}
+              onChange={(e) => updateDraft(user.id, 'grantedTotal', e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">사용 연차</p>
+            <Input
+              type="number"
+              step="0.5"
+              disabled={disabled}
+              value={draft.usedTotal}
+              onChange={(e) => updateDraft(user.id, 'usedTotal', e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">미사용 연차</p>
+            <p className="text-sm text-muted-foreground">{remaining}</p>
+          </div>
         </div>
       </>
     )
@@ -410,7 +414,7 @@ export default function AdminUsersPage() {
                   </button>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{renderMobileFields(user)}</div>
+                <div className="space-y-3">{renderMobileFields(user)}</div>
                 <div className="flex justify-end">
                   <Button
                     disabled={!user.canEdit || !hasPendingChange(user)}
