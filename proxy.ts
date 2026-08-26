@@ -5,7 +5,9 @@ import { auth } from '@/lib/auth'
 
 // '/api/signup'은 '/signup'으로 시작하지 않으므로 별도로 명시해야 한다.
 // (누락 시 Task 11에서 구현한 회원가입 API가 이 프록시에 의해 막힘)
-const PUBLIC_PATHS = ['/login', '/signup', '/api/signup']
+// '/api/cron'도 세션 쿠키가 없는 Vercel Cron 호출이 사용하므로 공개 경로로 등록한다.
+// 인증은 라우트 내부에서 Authorization: Bearer $CRON_SECRET 헤더로 별도 검증한다.
+const PUBLIC_PATHS = ['/login', '/signup', '/api/signup', '/api/cron']
 
 export default auth((req) => {
   const isPublic = PUBLIC_PATHS.some((path) => req.nextUrl.pathname.startsWith(path))
