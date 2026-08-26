@@ -34,7 +34,7 @@ export interface AttendanceExceptionHistoryRow {
 }
 
 export interface HistoryEntry {
-  category: '발생' | '연차 조정' | '사용' | '결재자 변경' | '입사일 변경' | '만근 예외'
+  category: '연차 발생' | '연차 조정' | '사용' | '결재자 변경' | '입사일 변경' | '만근 예외'
   date: string
   detail: string
   reason: string
@@ -68,7 +68,7 @@ export function buildHistoryTimeline(params: {
   exceptions?: AttendanceExceptionHistoryRow[]
 }): HistoryEntry[] {
   const grantEntries: SortableEntry[] = params.grants.map((g) => {
-    const category = g.createdBy === null ? '발생' : g.amount === 0 ? '입사일 변경' : '연차 조정'
+    const category = g.createdBy === null ? '연차 발생' : g.amount === 0 ? '입사일 변경' : '연차 조정'
     return {
       entry: {
         category,

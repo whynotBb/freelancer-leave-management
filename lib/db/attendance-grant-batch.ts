@@ -39,6 +39,7 @@ export async function runDailyAttendanceGrantBatch(today: string): Promise<{ gra
     }
 
     const periodStart = getMonthlyEvaluationPeriod(hireDate, monthIndex).start
+    const periodMonth = Number(periodStart.slice(5, 7))
     const cycle = getCurrentCycle(hireDate, today)
 
     try {
@@ -48,7 +49,7 @@ export async function runDailyAttendanceGrantBatch(today: string): Promise<{ gra
         amount: 1,
         cycleEnd: cycle.end,
         periodStart,
-        note: '자동 발생',
+        note: `${periodMonth}월 만근으로 인한 연차 자동 발생(시스템)`,
         createdBy: null,
       })
       granted++
