@@ -63,7 +63,7 @@ export function UserHistoryPanel({ open, onOpenChange, user }: UserHistoryPanelP
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="data-[side=right]:w-[95vw] data-[side=right]:sm:max-w-none lg:data-[side=right]:w-1/4">
+      <SheetContent className="data-[side=right]:w-[95vw] data-[side=right]:sm:max-w-none min-[501px]:data-[side=right]:w-[max(400px,25vw)]">
         <SheetHeader className="border-b border-border">
           <SheetTitle>{user?.name ?? ''}</SheetTitle>
           <SheetDescription>{user?.email ?? ''}</SheetDescription>
