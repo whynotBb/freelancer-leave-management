@@ -25,7 +25,7 @@ export interface ApproverChangeHistoryRow {
 }
 
 export interface HistoryEntry {
-  category: '발생' | '조정' | '사용' | '결재자 변경' | '입사일 변경'
+  category: '발생' | '연차 조정' | '사용' | '결재자 변경' | '입사일 변경'
   date: string
   detail: string
   reason: string
@@ -37,18 +37,26 @@ interface SortableEntry {
   sortKey: string
 }
 
+function formatDateTime(iso: string): string {
+  return iso.slice(0, 16).replace('T', ' ')
+}
+
+function formatAmount(amount: number): string {
+  return amount > 0 ? `+${amount}일` : `${amount}일`
+}
+
 export function buildHistoryTimeline(params: {
   grants: GrantHistoryRow[]
   usages: UsageHistoryRow[]
   approverChanges: ApproverChangeHistoryRow[]
 }): HistoryEntry[] {
   const grantEntries: SortableEntry[] = params.grants.map((g) => {
-    const category = g.createdBy === null ? '발생' : g.amount === 0 ? '입사일 변경' : '조정'
+    const category = g.createdBy === null ? '발생' : g.amount === 0 ? '입사일 변경' : '연차 조정'
     return {
       entry: {
         category,
-        date: g.grantDate,
-        detail: category === '입사일 변경' ? '-' : `${g.amount}일`,
+        date: formatDateTime(g.createdAt),
+        detail: category === '입사일 변경' ? '-' : formatAmount(g.amount),
         reason: g.note ?? '-',
         actorName: g.createdByName,
       },
@@ -58,9 +66,9 @@ export function buildHistoryTimeline(params: {
 
   const usageEntries: SortableEntry[] = params.usages.map((u) => ({
     entry: {
-      category: u.type === 'ADJUSTMENT' ? '조정' : '사용',
-      date: u.startDate,
-      detail: `${u.requestedDays}일`,
+      category: u.type === 'ADJUSTMENT' ? '연차 조정' : '사용',
+      date: formatDateTime(u.createdAt),
+      detail: formatAmount(u.requestedDays),
       reason: u.reason,
       actorName: u.approverName,
     },
@@ -70,7 +78,7 @@ export function buildHistoryTimeline(params: {
   const approverChangeEntries: SortableEntry[] = params.approverChanges.map((c) => ({
     entry: {
       category: '결재자 변경',
-      date: c.createdAt.slice(0, 10),
+      date: formatDateTime(c.createdAt),
       detail: `${c.beforeApproverName ?? '미지정'} → ${c.afterApproverName}`,
       reason: c.reason,
       actorName: c.changedByName,

@@ -22,11 +22,19 @@ interface HistoryUser {
 }
 
 interface HistoryEntry {
-  category: '발생' | '조정' | '사용' | '결재자 변경' | '입사일 변경'
+  category: '발생' | '연차 조정' | '사용' | '결재자 변경' | '입사일 변경'
   date: string
   detail: string
   reason: string
   actorName: string | null
+}
+
+const CATEGORY_BADGE_CLASS: Record<HistoryEntry['category'], string> = {
+  발생: 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+  '연차 조정': 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300',
+  사용: 'border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300',
+  '결재자 변경': 'border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300',
+  '입사일 변경': 'border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300',
 }
 
 interface UserHistoryPanelProps {
@@ -61,7 +69,7 @@ export function UserHistoryPanel({ open, onOpenChange, user }: UserHistoryPanelP
           <SheetDescription>{user?.email ?? ''}</SheetDescription>
         </SheetHeader>
         {user && (
-          <div className="flex-1 space-y-4 overflow-y-auto px-4 pb-4">
+          <div className="flex min-h-0 flex-1 flex-col px-4 pb-4">
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-xs text-muted-foreground">입사일</p>
@@ -84,29 +92,38 @@ export function UserHistoryPanel({ open, onOpenChange, user }: UserHistoryPanelP
                 <p>{user.remaining}</p>
               </div>
             </div>
-            <div>
+            <div className="mt-4 flex min-h-0 flex-1 flex-col">
               <p className="mb-2 text-sm font-medium">이력</p>
-              {loading ? (
-                <p className="text-sm text-muted-foreground">불러오는 중...</p>
-              ) : history.length === 0 ? (
-                <p className="text-sm text-muted-foreground">이력이 없습니다.</p>
-              ) : (
-                <div className="space-y-2">
-                  {history.map((entry, i) => (
-                    <div key={i} className="rounded-md border p-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline">{entry.category}</Badge>
-                        <span className="text-xs text-muted-foreground">{entry.date}</span>
+              <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                {loading ? (
+                  <p className="text-sm text-muted-foreground">불러오는 중...</p>
+                ) : history.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">이력이 없습니다.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {history.map((entry, i) => (
+                      <div key={i} className="rounded-md border p-3 text-sm">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className={CATEGORY_BADGE_CLASS[entry.category]}>
+                            {entry.category}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">{entry.date}</span>
+                        </div>
+                        <p className="mt-1">{entry.detail}</p>
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-semibold">사유:</span> {entry.reason}
+                          {entry.actorName && (
+                            <>
+                              {' · '}
+                              <span className="font-semibold">처리자:</span> {entry.actorName}
+                            </>
+                          )}
+                        </p>
                       </div>
-                      <p className="mt-1">{entry.detail}</p>
-                      <p className="text-xs text-muted-foreground">
-                        사유: {entry.reason}
-                        {entry.actorName && ` · 처리자: ${entry.actorName}`}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
