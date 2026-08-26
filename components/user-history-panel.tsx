@@ -44,8 +44,12 @@ export function UserHistoryPanel({ open, onOpenChange, user }: UserHistoryPanelP
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     fetch(`/api/admin/users/${user.id}/history`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('history fetch failed')
+        return res.json()
+      })
       .then((list: HistoryEntry[]) => setHistory(list))
+      .catch(() => setHistory([]))
       .finally(() => setLoading(false))
   }, [open, user])
 
