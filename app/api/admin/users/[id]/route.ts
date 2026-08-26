@@ -58,11 +58,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: '기본 결재자 변경은 최고관리자만 가능합니다.' }, { status: 403 })
     }
 
+    let newApprover: typeof users.$inferSelect | undefined
     if (body.defaultApproverId !== undefined) {
       const [approver] = await db.select().from(users).where(eq(users.id, body.defaultApproverId))
       if (!approver || (approver.role !== 'APPROVER' && approver.role !== 'SUPER_ADMIN')) {
         return NextResponse.json({ error: '유효하지 않은 결재자입니다.' }, { status: 400 })
       }
+      newApprover = approver
     }
 
     const needsReason =
@@ -90,7 +92,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         recipientId: targetId,
         type: 'APPROVER_CHANGED',
         refId: targetId,
-        message: `담당 결재자가 변경되었습니다: ${body.reason}`,
+        message: `담당 결재자가 ${newApprover!.name}(으)로 변경되었습니다: ${body.reason}`,
       })
       await createNotification({
         recipientId: body.defaultApproverId,

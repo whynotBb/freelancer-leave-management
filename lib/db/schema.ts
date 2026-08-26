@@ -50,7 +50,7 @@ export const holidays = pgTable('holidays', {
 export const notifications = pgTable('notifications', {
   id: serial('id').primaryKey(),
   recipientId: integer('recipient_id').notNull().references(() => users.id),
-  type: varchar('type', { length: 30 }).notNull(), // 'SIGNUP_PENDING' | 'LEAVE_SUBMITTED' | 'LEAVE_APPROVED' | 'LEAVE_REJECTED'
+  type: varchar('type', { length: 30 }).notNull(), // 'SIGNUP_PENDING' | 'LEAVE_SUBMITTED' | 'LEAVE_APPROVED' | 'LEAVE_REJECTED' | 'LEAVE_ADJUSTED' | 'APPROVER_CHANGED'
   refId: integer('ref_id').notNull(), // userId(가입 알림) 또는 leaveRequestId(휴가 알림)
   message: text('message').notNull(),
   read: boolean('read').notNull().default(false),

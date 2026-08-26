@@ -6,7 +6,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     await requireApproverOrAbove()
     const { id } = await params
-    const history = await getUserHistory(Number(id))
+    const targetId = Number(id)
+    if (!Number.isInteger(targetId)) {
+      return NextResponse.json({ error: '대상을 찾을 수 없습니다.' }, { status: 404 })
+    }
+    const history = await getUserHistory(targetId)
     return NextResponse.json(history)
   } catch (error) {
     const response = toAuthErrorResponse(error)

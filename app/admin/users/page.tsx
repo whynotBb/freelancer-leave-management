@@ -100,6 +100,7 @@ export default function AdminUsersPage() {
   }
 
   function requestApproverChange(user: FreelancerUser, approverId: number) {
+    if (approverId === user.defaultApproverId) return
     setPendingSave({ kind: 'approver', userId: user.id, approverId })
   }
 
