@@ -99,6 +99,11 @@ export default function AdminUsersPage() {
     setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }))
   }
 
+  function updateLeaveNumber(id: number, field: 'grantedTotal' | 'usedTotal', value: string) {
+    if (value !== '' && Number(value) > 99) return
+    updateDraft(id, field, value)
+  }
+
   function blockNegativeKey(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === '-' || e.key === 'Subtract') e.preventDefault()
   }
@@ -267,9 +272,10 @@ export default function AdminUsersPage() {
               type="number"
               step="0.5"
               min={0}
+              max={99}
               disabled={disabled}
               value={draft.grantedTotal}
-              onChange={(e) => updateDraft(user.id, 'grantedTotal', e.target.value)}
+              onChange={(e) => updateLeaveNumber(user.id, 'grantedTotal', e.target.value)}
               onKeyDown={blockNegativeKey}
             />
           </div>
@@ -279,9 +285,10 @@ export default function AdminUsersPage() {
               type="number"
               step="0.5"
               min={0}
+              max={99}
               disabled={disabled}
               value={draft.usedTotal}
-              onChange={(e) => updateDraft(user.id, 'usedTotal', e.target.value)}
+              onChange={(e) => updateLeaveNumber(user.id, 'usedTotal', e.target.value)}
               onKeyDown={blockNegativeKey}
             />
           </div>
@@ -378,9 +385,10 @@ export default function AdminUsersPage() {
                         type="number"
                         step="0.5"
                         min={0}
+                        max={99}
                         disabled={!user.canEdit}
                         value={draft.grantedTotal}
-                        onChange={(e) => updateDraft(user.id, 'grantedTotal', e.target.value)}
+                        onChange={(e) => updateLeaveNumber(user.id, 'grantedTotal', e.target.value)}
                         onKeyDown={blockNegativeKey}
                       />
                     </TableCell>
@@ -389,9 +397,10 @@ export default function AdminUsersPage() {
                         type="number"
                         step="0.5"
                         min={0}
+                        max={99}
                         disabled={!user.canEdit}
                         value={draft.usedTotal}
-                        onChange={(e) => updateDraft(user.id, 'usedTotal', e.target.value)}
+                        onChange={(e) => updateLeaveNumber(user.id, 'usedTotal', e.target.value)}
                         onKeyDown={blockNegativeKey}
                       />
                     </TableCell>

@@ -16,8 +16,8 @@ import { recordApproverChange } from '@/lib/db/approver-changes'
 const updateSchema = z.object({
   hireDate: z.string().optional(),
   defaultApproverId: z.number().optional(),
-  grantedTotal: z.number().min(0).multipleOf(0.5).optional(),
-  usedTotal: z.number().min(0).multipleOf(0.5).optional(),
+  grantedTotal: z.number().min(0).max(99).multipleOf(0.5).optional(),
+  usedTotal: z.number().min(0).max(99).multipleOf(0.5).optional(),
   reason: z.string().min(1).optional(),
 })
 
