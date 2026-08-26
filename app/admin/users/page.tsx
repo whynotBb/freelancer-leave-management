@@ -334,7 +334,7 @@ export default function AdminUsersPage() {
                     <TableCell>
                       <button
                         type="button"
-                        className="cursor-pointer text-left font-medium hover:underline"
+                        className="cursor-pointer text-left font-medium hover:underline underline-offset-4"
                         onClick={() => setHistoryUserId(user.id)}
                       >
                         {user.name}
@@ -403,7 +403,7 @@ export default function AdminUsersPage() {
                 <div>
                   <button
                     type="button"
-                    className="cursor-pointer text-left font-medium hover:underline"
+                    className="cursor-pointer text-left font-medium hover:underline underline-offset-4"
                     onClick={() => setHistoryUserId(user.id)}
                   >
                     {user.name}
