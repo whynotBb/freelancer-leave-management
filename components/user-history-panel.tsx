@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { DownloadIcon } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -9,6 +10,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 interface HistoryUser {
   id: number
@@ -46,6 +48,8 @@ interface UserHistoryPanelProps {
 export function UserHistoryPanel({ open, onOpenChange, user }: UserHistoryPanelProps) {
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [loading, setLoading] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open || !user) return
@@ -61,12 +65,54 @@ export function UserHistoryPanel({ open, onOpenChange, user }: UserHistoryPanelP
       .finally(() => setLoading(false))
   }, [open, user])
 
+  async function downloadExport() {
+    if (!user) return
+    setExportError(null)
+    setExporting(true)
+    try {
+      const res = await fetch(`/api/admin/users/export?mode=selected&ids=${user.id}`)
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        setExportError(body?.error ?? '다운로드에 실패했습니다.')
+        return
+      }
+      const blob = await res.blob()
+      const disposition = res.headers.get('Content-Disposition') ?? ''
+      const match = disposition.match(/filename\*=UTF-8''([^;]+)/i)
+      const filename = match ? decodeURIComponent(match[1]) : '프리랜서_연차정보.xlsx'
+
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objectUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(objectUrl)
+    } catch {
+      setExportError('다운로드에 실패했습니다.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="data-[side=right]:w-[95vw] data-[side=right]:sm:max-w-none min-[501px]:data-[side=right]:w-[max(400px,25vw)]">
         <SheetHeader className="border-b border-border">
-          <SheetTitle>{user?.name ?? ''}</SheetTitle>
-          <SheetDescription>{user?.email ?? ''}</SheetDescription>
+          <div className="flex items-start justify-between gap-2 pr-8">
+            <div>
+              <SheetTitle>{user?.name ?? ''}</SheetTitle>
+              <SheetDescription>{user?.email ?? ''}</SheetDescription>
+            </div>
+            {user && (
+              <Button variant="outline" size="sm" disabled={exporting} onClick={downloadExport}>
+                <DownloadIcon className="size-4" />
+                엑셀 다운로드
+              </Button>
+            )}
+          </div>
+          {exportError && <p className="text-sm text-destructive">{exportError}</p>}
         </SheetHeader>
         {user && (
           <div className="flex min-h-0 flex-1 flex-col px-4 pb-4">

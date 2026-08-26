@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import { useSession } from 'next-auth/react'
-import { SearchIcon } from 'lucide-react'
+import { DownloadIcon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/date-picker'
 import { ApproverCombobox } from '@/components/approver-combobox'
@@ -70,6 +71,9 @@ export default function AdminUsersPage() {
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [historyUserId, setHistoryUserId] = useState<number | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [exportError, setExportError] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -94,6 +98,64 @@ export default function AdminUsersPage() {
       .filter((u) => u.name.toLowerCase().includes(query) || u.email.toLowerCase().includes(query))
       .filter((u) => !onlyMine || u.defaultApproverId === callerId)
   }, [users, search, onlyMine, callerId])
+
+  const allFilteredSelected = filtered.length > 0 && filtered.every((u) => selectedIds.has(u.id))
+
+  function toggleRowSelected(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAllFiltered() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (allFilteredSelected) {
+        filtered.forEach((u) => next.delete(u.id))
+      } else {
+        filtered.forEach((u) => next.add(u.id))
+      }
+      return next
+    })
+  }
+
+  async function downloadExport() {
+    const url =
+      selectedIds.size > 0
+        ? `/api/admin/users/export?mode=selected&ids=${[...selectedIds].join(',')}`
+        : `/api/admin/users/export?mode=${onlyMine ? 'mine' : 'all'}`
+
+    setExportError(null)
+    setExporting(true)
+    try {
+      const res = await fetch(url)
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        setExportError(body?.error ?? '다운로드에 실패했습니다.')
+        return
+      }
+      const blob = await res.blob()
+      const disposition = res.headers.get('Content-Disposition') ?? ''
+      const match = disposition.match(/filename\*=UTF-8''([^;]+)/i)
+      const filename = match ? decodeURIComponent(match[1]) : '프리랜서_연차정보.xlsx'
+
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objectUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(objectUrl)
+    } catch {
+      setExportError('다운로드에 실패했습니다.')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   function updateDraft(id: number, field: keyof Draft, value: string) {
     setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }))
@@ -322,7 +384,18 @@ export default function AdminUsersPage() {
             담당 프리랜서만 보기
           </Button>
         )}
+        <Button
+          variant="outline"
+          disabled={exporting}
+          onClick={downloadExport}
+          className="hidden xl:inline-flex"
+        >
+          <DownloadIcon className="size-4" />
+          {selectedIds.size > 0 ? `선택 항목 다운로드 (${selectedIds.size}건)` : '엑셀 다운로드'}
+        </Button>
       </div>
+
+      {exportError && <p className="mb-4 text-right text-sm text-destructive">{exportError}</p>}
 
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">
@@ -344,6 +417,13 @@ export default function AdminUsersPage() {
                 <TableHead className="w-28">사용 연차</TableHead>
                 <TableHead className="w-28">잔여 연차</TableHead>
                 <TableHead className="w-20 text-right"></TableHead>
+                <TableHead className="w-12 text-center">
+                  <Checkbox
+                    checked={allFilteredSelected}
+                    onCheckedChange={toggleSelectAllFiltered}
+                    aria-label="전체 선택"
+                  />
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -420,6 +500,13 @@ export default function AdminUsersPage() {
                       {errors[user.id] && (
                         <p className="mt-1 text-right text-sm text-destructive">{errors[user.id]}</p>
                       )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Checkbox
+                        checked={selectedIds.has(user.id)}
+                        onCheckedChange={() => toggleRowSelected(user.id)}
+                        aria-label={`${user.name} 선택`}
+                      />
                     </TableCell>
                   </TableRow>
                 )
