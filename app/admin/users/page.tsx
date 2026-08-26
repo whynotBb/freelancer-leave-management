@@ -397,7 +397,7 @@ export default function AdminUsersPage() {
             </TableBody>
           </Table>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
+          <div className="grid grid-cols-1 gap-3 lg:hidden">
             {filtered.map((user) => (
               <div key={user.id} className="space-y-3 rounded-lg border p-4">
                 <div>
@@ -410,14 +410,15 @@ export default function AdminUsersPage() {
                   </button>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
-                <div className="space-y-2">{renderMobileFields(user)}</div>
-                <Button
-                  className="w-full"
-                  disabled={!user.canEdit || !hasPendingChange(user)}
-                  onClick={() => setPendingSave({ kind: 'fields', userId: user.id })}
-                >
-                  저장
-                </Button>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{renderMobileFields(user)}</div>
+                <div className="flex justify-end">
+                  <Button
+                    disabled={!user.canEdit || !hasPendingChange(user)}
+                    onClick={() => setPendingSave({ kind: 'fields', userId: user.id })}
+                  >
+                    저장
+                  </Button>
+                </div>
                 {errors[user.id] && <p className="text-sm text-destructive">{errors[user.id]}</p>}
               </div>
             ))}
