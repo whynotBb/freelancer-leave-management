@@ -9,6 +9,7 @@ import { DatePicker } from '@/components/date-picker'
 import { ApproverCombobox } from '@/components/approver-combobox'
 import { LeaveAdjustmentDialog } from '@/components/leave-adjustment-dialog'
 import { PageHeader } from '@/components/page-header'
+import { UserHistoryPanel } from '@/components/user-history-panel'
 import {
   Table,
   TableBody,
@@ -43,6 +44,10 @@ interface Draft {
   usedTotal: string
 }
 
+type PendingSave =
+  | { kind: 'fields'; userId: number }
+  | { kind: 'approver'; userId: number; approverId: number }
+
 function toDraft(user: FreelancerUser): Draft {
   return {
     hireDate: user.hireDate ?? '',
@@ -62,8 +67,9 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('')
   const [onlyMine, setOnlyMine] = useState(false)
   const [errors, setErrors] = useState<Record<number, string>>({})
-  const [dialogUserId, setDialogUserId] = useState<number | null>(null)
+  const [pendingSave, setPendingSave] = useState<PendingSave | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [historyUserId, setHistoryUserId] = useState<number | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -93,25 +99,8 @@ export default function AdminUsersPage() {
     setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }))
   }
 
-  async function changeApprover(user: FreelancerUser, approverId: number) {
-    const res = await fetch(`/api/admin/users/${user.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ defaultApproverId: approverId }),
-    })
-    if (!res.ok) {
-      const body = await res.json().catch(() => null)
-      setErrors((prev) => ({ ...prev, [user.id]: body?.error ?? '처리에 실패했습니다.' }))
-      return
-    }
-    const approver = approvers.find((a) => a.id === approverId)
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === user.id
-          ? { ...u, defaultApproverId: approverId, defaultApproverName: approver?.name ?? null }
-          : u
-      )
-    )
+  function requestApproverChange(user: FreelancerUser, approverId: number) {
+    setPendingSave({ kind: 'approver', userId: user.id, approverId })
   }
 
   function hasPendingChange(user: FreelancerUser): boolean {
@@ -124,7 +113,7 @@ export default function AdminUsersPage() {
     )
   }
 
-  function buildChanges(user: FreelancerUser) {
+  function buildFieldChanges(user: FreelancerUser) {
     const draft = drafts[user.id]
     const changes: { label: string; before: string; after: string }[] = []
     if (draft.hireDate !== (user.hireDate ?? '')) {
@@ -139,12 +128,59 @@ export default function AdminUsersPage() {
     return changes
   }
 
+  function buildDialogChanges(): { label: string; before: string; after: string }[] {
+    if (!pendingSave) return []
+    const user = users.find((u) => u.id === pendingSave.userId)
+    if (!user) return []
+    if (pendingSave.kind === 'approver') {
+      const newApprover = approvers.find((a) => a.id === pendingSave.approverId)
+      return [
+        {
+          label: '기본 결재자',
+          before: user.defaultApproverName ?? '미지정',
+          after: newApprover?.name ?? '-',
+        },
+      ]
+    }
+    return buildFieldChanges(user)
+  }
+
   async function confirmSave(reason: string) {
-    const user = users.find((u) => u.id === dialogUserId)
+    if (!pendingSave) return
+    const user = users.find((u) => u.id === pendingSave.userId)
     if (!user) return
-    const draft = drafts[user.id]
     setSubmitting(true)
     try {
+      if (pendingSave.kind === 'approver') {
+        const res = await fetch(`/api/admin/users/${user.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ defaultApproverId: pendingSave.approverId, reason }),
+        })
+        if (!res.ok) {
+          const body = await res.json().catch(() => null)
+          setErrors((prev) => ({ ...prev, [user.id]: body?.error ?? '처리에 실패했습니다.' }))
+          setPendingSave(null)
+          return
+        }
+        const approver = approvers.find((a) => a.id === pendingSave.approverId)
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === user.id
+              ? { ...u, defaultApproverId: pendingSave.approverId, defaultApproverName: approver?.name ?? null }
+              : u
+          )
+        )
+        setErrors((prev) => {
+          const next = { ...prev }
+          delete next[user.id]
+          return next
+        })
+        setPendingSave(null)
+        return
+      }
+
+      const draft = drafts[user.id]
       const res = await fetch(`/api/admin/users/${user.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -158,7 +194,7 @@ export default function AdminUsersPage() {
       if (!res.ok) {
         const body = await res.json().catch(() => null)
         setErrors((prev) => ({ ...prev, [user.id]: body?.error ?? '처리에 실패했습니다.' }))
-        setDialogUserId(null)
+        setPendingSave(null)
         return
       }
       const updated = await res.json()
@@ -182,7 +218,7 @@ export default function AdminUsersPage() {
         delete next[user.id]
         return next
       })
-      setDialogUserId(null)
+      setPendingSave(null)
     } finally {
       setSubmitting(false)
     }
@@ -210,7 +246,7 @@ export default function AdminUsersPage() {
             <ApproverCombobox
               value={user.defaultApproverId}
               approvers={approvers}
-              onChange={(id) => changeApprover(user, id)}
+              onChange={(id) => requestApproverChange(user, id)}
               className="w-full"
             />
           ) : (
@@ -267,7 +303,13 @@ export default function AdminUsersPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground">승인된 프리랜서가 없습니다.</p>
+        <p className="text-sm text-muted-foreground">
+          {search
+            ? `'${search}' 검색 결과가 없습니다.`
+            : onlyMine
+              ? '담당 프리랜서가 없습니다.'
+              : '승인된 프리랜서가 없습니다.'}
+        </p>
       ) : (
         <>
           <Table className="hidden lg:table" containerClassName="hidden lg:block">
@@ -289,7 +331,13 @@ export default function AdminUsersPage() {
                 return (
                   <TableRow key={user.id}>
                     <TableCell>
-                      <p className="font-medium">{user.name}</p>
+                      <button
+                        type="button"
+                        className="cursor-pointer text-left font-medium hover:underline"
+                        onClick={() => setHistoryUserId(user.id)}
+                      >
+                        {user.name}
+                      </button>
                       <p className="text-sm text-muted-foreground">{user.email}</p>
                     </TableCell>
                     <TableCell>
@@ -304,7 +352,7 @@ export default function AdminUsersPage() {
                         <ApproverCombobox
                           value={user.defaultApproverId}
                           approvers={approvers}
-                          onChange={(id) => changeApprover(user, id)}
+                          onChange={(id) => requestApproverChange(user, id)}
                         />
                       ) : (
                         <p className="text-sm">{user.defaultApproverName ?? '-'}</p>
@@ -333,7 +381,7 @@ export default function AdminUsersPage() {
                       <div className="flex items-center justify-end">
                         <Button
                           disabled={!user.canEdit || !hasPendingChange(user)}
-                          onClick={() => setDialogUserId(user.id)}
+                          onClick={() => setPendingSave({ kind: 'fields', userId: user.id })}
                         >
                           저장
                         </Button>
@@ -352,14 +400,20 @@ export default function AdminUsersPage() {
             {filtered.map((user) => (
               <div key={user.id} className="space-y-3 rounded-lg border p-4">
                 <div>
-                  <p className="font-medium">{user.name}</p>
+                  <button
+                    type="button"
+                    className="cursor-pointer text-left font-medium hover:underline"
+                    onClick={() => setHistoryUserId(user.id)}
+                  >
+                    {user.name}
+                  </button>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
                 <div className="space-y-2">{renderMobileFields(user)}</div>
                 <Button
                   className="w-full"
                   disabled={!user.canEdit || !hasPendingChange(user)}
-                  onClick={() => setDialogUserId(user.id)}
+                  onClick={() => setPendingSave({ kind: 'fields', userId: user.id })}
                 >
                   저장
                 </Button>
@@ -370,15 +424,21 @@ export default function AdminUsersPage() {
         </>
       )}
 
-      {dialogUserId !== null && (
+      {pendingSave !== null && (
         <LeaveAdjustmentDialog
-          open={dialogUserId !== null}
-          onOpenChange={(open) => !open && setDialogUserId(null)}
-          changes={buildChanges(users.find((u) => u.id === dialogUserId)!)}
+          open={pendingSave !== null}
+          onOpenChange={(open) => !open && setPendingSave(null)}
+          changes={buildDialogChanges()}
           onConfirm={confirmSave}
           submitting={submitting}
         />
       )}
+
+      <UserHistoryPanel
+        open={historyUserId !== null}
+        onOpenChange={(open) => !open && setHistoryUserId(null)}
+        user={users.find((u) => u.id === historyUserId) ?? null}
+      />
     </div>
   )
 }
