@@ -54,6 +54,32 @@ describe('buildHistoryTimeline', () => {
     ])
   })
 
+  it('createdBy가 있고 amount가 0인 leaveGrants 행은 "입사일 변경"으로 분류하고 detail은 "-"이다', () => {
+    const result = buildHistoryTimeline({
+      grants: [
+        {
+          grantDate: '2026-05-01',
+          amount: 0,
+          note: '입사일 수정',
+          createdBy: 1,
+          createdByName: '관리자',
+          createdAt: '2026-05-01T09:00:00.000Z',
+        },
+      ],
+      usages: [],
+      approverChanges: [],
+    })
+    expect(result).toEqual([
+      {
+        category: '입사일 변경',
+        date: '2026-05-01',
+        detail: '-',
+        reason: '입사일 수정',
+        actorName: '관리자',
+      },
+    ])
+  })
+
   it("type이 'ADJUSTMENT'인 leaveRequests 행은 \"조정\"으로 분류한다", () => {
     const result = buildHistoryTimeline({
       grants: [],

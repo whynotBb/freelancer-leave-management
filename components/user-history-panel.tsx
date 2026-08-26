@@ -22,7 +22,7 @@ interface HistoryUser {
 }
 
 interface HistoryEntry {
-  category: '발생' | '조정' | '사용' | '결재자 변경'
+  category: '발생' | '조정' | '사용' | '결재자 변경' | '입사일 변경'
   date: string
   detail: string
   reason: string

@@ -25,7 +25,7 @@ export interface ApproverChangeHistoryRow {
 }
 
 export interface HistoryEntry {
-  category: '발생' | '조정' | '사용' | '결재자 변경'
+  category: '발생' | '조정' | '사용' | '결재자 변경' | '입사일 변경'
   date: string
   detail: string
   reason: string
@@ -42,16 +42,19 @@ export function buildHistoryTimeline(params: {
   usages: UsageHistoryRow[]
   approverChanges: ApproverChangeHistoryRow[]
 }): HistoryEntry[] {
-  const grantEntries: SortableEntry[] = params.grants.map((g) => ({
-    entry: {
-      category: g.createdBy === null ? '발생' : '조정',
-      date: g.grantDate,
-      detail: `${g.amount}일`,
-      reason: g.note ?? '-',
-      actorName: g.createdByName,
-    },
-    sortKey: g.createdAt,
-  }))
+  const grantEntries: SortableEntry[] = params.grants.map((g) => {
+    const category = g.createdBy === null ? '발생' : g.amount === 0 ? '입사일 변경' : '조정'
+    return {
+      entry: {
+        category,
+        date: g.grantDate,
+        detail: category === '입사일 변경' ? '-' : `${g.amount}일`,
+        reason: g.note ?? '-',
+        actorName: g.createdByName,
+      },
+      sortKey: g.createdAt,
+    }
+  })
 
   const usageEntries: SortableEntry[] = params.usages.map((u) => ({
     entry: {
