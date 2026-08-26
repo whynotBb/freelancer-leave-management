@@ -334,16 +334,16 @@ export default function AdminUsersPage() {
         </p>
       ) : (
         <>
-          <Table className="hidden xl:table" containerClassName="hidden xl:block">
+          <Table className="hidden table-fixed xl:table" containerClassName="hidden xl:block">
             <TableHeader>
               <TableRow>
                 <TableHead>이름</TableHead>
-                <TableHead>입사일</TableHead>
-                <TableHead>기본 결재자</TableHead>
-                <TableHead>발생 연차</TableHead>
-                <TableHead>사용 연차</TableHead>
-                <TableHead>잔여 연차</TableHead>
-                <TableHead className="text-right"></TableHead>
+                <TableHead className="w-44">입사일</TableHead>
+                <TableHead className="w-52">기본 결재자</TableHead>
+                <TableHead className="w-28">발생 연차</TableHead>
+                <TableHead className="w-28">사용 연차</TableHead>
+                <TableHead className="w-28">잔여 연차</TableHead>
+                <TableHead className="w-20 text-right"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -355,12 +355,15 @@ export default function AdminUsersPage() {
                     <TableCell>
                       <button
                         type="button"
-                        className="cursor-pointer text-left font-medium hover:underline underline-offset-4"
+                        className="block w-full cursor-pointer truncate text-left font-medium hover:underline underline-offset-4"
+                        title={user.name}
                         onClick={() => setHistoryUserId(user.id)}
                       >
                         {user.name}
                       </button>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <p className="truncate text-sm text-muted-foreground" title={user.email}>
+                        {user.email}
+                      </p>
                     </TableCell>
                     <TableCell>
                       <DatePicker
