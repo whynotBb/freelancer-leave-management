@@ -279,7 +279,9 @@ export default function AdminUsersPage() {
           </div>
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">미사용 연차</p>
-            <p className="text-sm text-muted-foreground">{remaining}</p>
+            <p className="flex h-9 items-center rounded-md border border-border bg-muted/30 px-3 text-sm text-muted-foreground">
+              {remaining}
+            </p>
           </div>
         </div>
       </>
