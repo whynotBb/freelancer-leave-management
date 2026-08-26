@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getCurrentCycle, getMonthlyAnniversaryIndex, getMonthlyEvaluationPeriod } from './leave-cycle'
+import { getCurrentCycle, getMonthlyAnniversaryIndex, getMonthlyEvaluationPeriod, findMonthlyEvaluationPeriod } from './leave-cycle'
 
 describe('getCurrentCycle', () => {
   it('입사 첫 해는 cycleIndex 0', () => {
@@ -52,5 +52,39 @@ describe('getMonthlyAnniversaryIndex', () => {
   it('기념일이 아니면 null', () => {
     expect(getMonthlyAnniversaryIndex('2026-03-15', '2026-04-16')).toBeNull()
     expect(getMonthlyAnniversaryIndex('2026-03-15', '2026-03-14')).toBeNull()
+  })
+})
+
+describe('findMonthlyEvaluationPeriod', () => {
+  it('입사일 당일은 1번째 평가월(입사일~1개월 후)에 속한다', () => {
+    expect(findMonthlyEvaluationPeriod('2026-03-15', '2026-03-15')).toEqual({
+      monthIndex: 1,
+      start: '2026-03-15',
+      end: '2026-04-15',
+    })
+  })
+
+  it('평가월 중간 날짜는 그 평가월에 속한다', () => {
+    expect(findMonthlyEvaluationPeriod('2026-03-15', '2026-03-28')).toEqual({
+      monthIndex: 1,
+      start: '2026-03-15',
+      end: '2026-04-15',
+    })
+  })
+
+  it('경계일(다음 평가월 시작일)은 새로 시작하는 평가월에 속한다', () => {
+    expect(findMonthlyEvaluationPeriod('2026-03-15', '2026-04-15')).toEqual({
+      monthIndex: 2,
+      start: '2026-04-15',
+      end: '2026-05-15',
+    })
+  })
+
+  it('몇 개월 뒤 날짜도 올바른 평가월로 매핑한다', () => {
+    expect(findMonthlyEvaluationPeriod('2026-01-10', '2026-06-20')).toEqual({
+      monthIndex: 6,
+      start: '2026-06-10',
+      end: '2026-07-10',
+    })
   })
 })
