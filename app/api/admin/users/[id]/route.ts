@@ -11,6 +11,7 @@ import {
   recordHireDateChangeMarker,
 } from '@/lib/db/leave-adjustments'
 import { createNotification } from '@/lib/db/notifications'
+import { recordApproverChange } from '@/lib/db/approver-changes'
 
 const updateSchema = z.object({
   hireDate: z.string().optional(),
@@ -64,16 +65,39 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }
     }
 
-    const needsReason = body.hireDate !== undefined || body.grantedTotal !== undefined || body.usedTotal !== undefined
+    const needsReason =
+      body.hireDate !== undefined ||
+      body.grantedTotal !== undefined ||
+      body.usedTotal !== undefined ||
+      body.defaultApproverId !== undefined
     if (needsReason && !body.reason) {
-      return NextResponse.json({ error: '입사일/연차 변경 시 사유는 필수입니다.' }, { status: 400 })
+      return NextResponse.json({ error: '입사일/연차/결재자 변경 시 사유는 필수입니다.' }, { status: 400 })
     }
 
     if (body.hireDate !== undefined) {
       await db.update(users).set({ hireDate: body.hireDate }).where(eq(users.id, targetId))
     }
-    if (body.defaultApproverId !== undefined) {
+    if (body.defaultApproverId !== undefined && body.defaultApproverId !== target.defaultApproverId) {
       await db.update(users).set({ defaultApproverId: body.defaultApproverId }).where(eq(users.id, targetId))
+      await recordApproverChange({
+        userId: targetId,
+        beforeApproverId: target.defaultApproverId,
+        afterApproverId: body.defaultApproverId,
+        reason: body.reason!,
+        changedBy: callerId,
+      })
+      await createNotification({
+        recipientId: targetId,
+        type: 'APPROVER_CHANGED',
+        refId: targetId,
+        message: `담당 결재자가 변경되었습니다: ${body.reason}`,
+      })
+      await createNotification({
+        recipientId: body.defaultApproverId,
+        type: 'APPROVER_CHANGED',
+        refId: targetId,
+        message: `${target.name}의 담당 결재자로 지정되었습니다: ${body.reason}`,
+      })
     }
 
     const hireDate = body.hireDate ?? target.hireDate
