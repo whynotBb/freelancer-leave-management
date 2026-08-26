@@ -120,7 +120,7 @@ export default function AdminUsersPage() {
       changes.push({ label: '입사일', before: user.hireDate ?? '-', after: draft.hireDate || '-' })
     }
     if (draft.grantedTotal !== String(user.granted)) {
-      changes.push({ label: '사용가능 연차', before: String(user.granted), after: draft.grantedTotal })
+      changes.push({ label: '발생 연차', before: String(user.granted), after: draft.grantedTotal })
     }
     if (draft.usedTotal !== String(user.used)) {
       changes.push({ label: '사용 연차', before: String(user.used), after: draft.usedTotal })
@@ -254,7 +254,7 @@ export default function AdminUsersPage() {
           )}
         </div>
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">사용가능 연차</p>
+          <p className="text-xs text-muted-foreground">발생 연차</p>
           <Input
             type="number"
             step="0.5"
@@ -318,7 +318,7 @@ export default function AdminUsersPage() {
                 <TableHead>이름</TableHead>
                 <TableHead>입사일</TableHead>
                 <TableHead>기본 결재자</TableHead>
-                <TableHead>사용가능 연차</TableHead>
+                <TableHead>발생 연차</TableHead>
                 <TableHead>사용 연차</TableHead>
                 <TableHead>미사용 연차</TableHead>
                 <TableHead className="text-right"></TableHead>
