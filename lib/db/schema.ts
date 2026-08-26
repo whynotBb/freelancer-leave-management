@@ -56,3 +56,13 @@ export const notifications = pgTable('notifications', {
   read: boolean('read').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
+
+export const approverChanges = pgTable('approver_changes', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  beforeApproverId: integer('before_approver_id').references(() => users.id),
+  afterApproverId: integer('after_approver_id').notNull().references(() => users.id),
+  reason: text('reason').notNull(),
+  changedBy: integer('changed_by').notNull().references(() => users.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
