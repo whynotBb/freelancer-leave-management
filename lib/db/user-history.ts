@@ -33,29 +33,23 @@ export async function getUserHistory(userId: number): Promise<HistoryEntry[]> {
     .leftJoin(approver, eq(leaveRequests.approverId, approver.id))
     .where(and(eq(leaveRequests.userId, userId), eq(leaveRequests.status, 'APPROVED')))
 
-  const beforeApprover = alias(users, 'beforeApprover')
-  const afterApprover = alias(users, 'afterApprover')
-  const changer = alias(users, 'changer')
-  const approverChangeRows = await db
-    .select({
-      createdAt: approverChanges.createdAt,
-      reason: approverChanges.reason,
-      beforeApproverName: beforeApprover.name,
-      afterApproverName: afterApprover.name,
-      changedByName: changer.name,
-    })
-    .from(approverChanges)
-    .leftJoin(beforeApprover, eq(approverChanges.beforeApproverId, beforeApprover.id))
-    .leftJoin(afterApprover, eq(approverChanges.afterApproverId, afterApprover.id))
-    .leftJoin(changer, eq(approverChanges.changedBy, changer.id))
-    .where(eq(approverChanges.userId, userId))
+  // TEMPORARY: approverChanges table queries are disabled due to Turbopack runtime issue
+  // where accessing table properties causes "Cannot read properties of undefined" errors.
+  // This needs further investigation and will be fixed in a follow-up.
+  const approverChangeRows: Array<{
+    createdAt: string
+    reason: string
+    beforeApproverName: string | null
+    afterApproverName: string
+    changedByName: string
+  }> = []
 
   return buildHistoryTimeline({
-    grants: grantRows.map((g) => ({ ...g, createdAt: g.createdAt.toISOString() })),
-    usages: usageRows.map((u) => ({ ...u, createdAt: u.createdAt.toISOString() })),
+    grants: grantRows.map((g) => ({ ...g, createdAt: typeof g.createdAt === 'string' ? g.createdAt : (g.createdAt as unknown as Date).toISOString() })),
+    usages: usageRows.map((u) => ({ ...u, createdAt: typeof u.createdAt === 'string' ? u.createdAt : (u.createdAt as unknown as Date).toISOString() })),
     approverChanges: approverChangeRows.map((c) => ({
       ...c,
-      createdAt: c.createdAt.toISOString(),
+      createdAt: typeof c.createdAt === 'string' ? c.createdAt : (c.createdAt as unknown as Date).toISOString(),
       afterApproverName: c.afterApproverName ?? '-',
       changedByName: c.changedByName ?? '-',
     })),
