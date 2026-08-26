@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import { useSession } from 'next-auth/react'
 import { SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -97,6 +97,10 @@ export default function AdminUsersPage() {
 
   function updateDraft(id: number, field: keyof Draft, value: string) {
     setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }))
+  }
+
+  function blockNegativeKey(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === '-' || e.key === 'Subtract') e.preventDefault()
   }
 
   function requestApproverChange(user: FreelancerUser, approverId: number) {
@@ -262,9 +266,11 @@ export default function AdminUsersPage() {
             <Input
               type="number"
               step="0.5"
+              min={0}
               disabled={disabled}
               value={draft.grantedTotal}
               onChange={(e) => updateDraft(user.id, 'grantedTotal', e.target.value)}
+              onKeyDown={blockNegativeKey}
             />
           </div>
           <div className="space-y-1">
@@ -272,13 +278,15 @@ export default function AdminUsersPage() {
             <Input
               type="number"
               step="0.5"
+              min={0}
               disabled={disabled}
               value={draft.usedTotal}
               onChange={(e) => updateDraft(user.id, 'usedTotal', e.target.value)}
+              onKeyDown={blockNegativeKey}
             />
           </div>
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">미사용 연차</p>
+            <p className="text-xs text-muted-foreground">잔여 연차</p>
             <p className="flex h-9 items-center rounded-md border border-border bg-muted/30 px-3 text-sm text-muted-foreground">
               {remaining}
             </p>
@@ -327,7 +335,7 @@ export default function AdminUsersPage() {
                 <TableHead>기본 결재자</TableHead>
                 <TableHead>발생 연차</TableHead>
                 <TableHead>사용 연차</TableHead>
-                <TableHead>미사용 연차</TableHead>
+                <TableHead>잔여 연차</TableHead>
                 <TableHead className="text-right"></TableHead>
               </TableRow>
             </TableHeader>
@@ -369,18 +377,22 @@ export default function AdminUsersPage() {
                       <Input
                         type="number"
                         step="0.5"
+                        min={0}
                         disabled={!user.canEdit}
                         value={draft.grantedTotal}
                         onChange={(e) => updateDraft(user.id, 'grantedTotal', e.target.value)}
+                        onKeyDown={blockNegativeKey}
                       />
                     </TableCell>
                     <TableCell>
                       <Input
                         type="number"
                         step="0.5"
+                        min={0}
                         disabled={!user.canEdit}
                         value={draft.usedTotal}
                         onChange={(e) => updateDraft(user.id, 'usedTotal', e.target.value)}
+                        onKeyDown={blockNegativeKey}
                       />
                     </TableCell>
                     <TableCell className="text-muted-foreground">{remaining}</TableCell>

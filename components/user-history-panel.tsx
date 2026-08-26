@@ -88,7 +88,7 @@ export function UserHistoryPanel({ open, onOpenChange, user }: UserHistoryPanelP
                 <p>{user.used}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">미사용 연차</p>
+                <p className="text-xs text-muted-foreground">잔여 연차</p>
                 <p>{user.remaining}</p>
               </div>
             </div>
