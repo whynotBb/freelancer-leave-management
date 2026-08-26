@@ -334,7 +334,7 @@ export default function AdminUsersPage() {
         </p>
       ) : (
         <>
-          <Table className="hidden lg:table" containerClassName="hidden lg:block">
+          <Table className="hidden xl:table" containerClassName="hidden xl:block">
             <TableHeader>
               <TableRow>
                 <TableHead>이름</TableHead>
@@ -424,7 +424,7 @@ export default function AdminUsersPage() {
             </TableBody>
           </Table>
 
-          <div className="grid grid-cols-1 gap-3 lg:hidden">
+          <div className="grid grid-cols-1 gap-3 xl:hidden">
             {filtered.map((user) => (
               <div key={user.id} className="space-y-3 rounded-lg border p-4">
                 <div>
