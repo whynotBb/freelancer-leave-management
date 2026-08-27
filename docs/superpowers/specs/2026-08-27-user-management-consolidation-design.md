@@ -61,12 +61,13 @@ interface UserManageRow {
 기존 `app/api/admin/signups/[id]/route.ts`의 `decision: 'APPROVED'` 분기를 그대로 이관한다.
 
 - 권한: `requireSuperAdmin()`
-- 요청 바디: `{ role: 'FREELANCER' | 'APPROVER', hireDate?: string, defaultApproverId?: number }`
+- 요청 바디: `{ role: 'FREELANCER' | 'APPROVER', hireDate?: string }`
 - 검증(기존과 동일):
   - `role` 필수
   - `role === 'FREELANCER'`이면 `hireDate` 필수 — 없으면 400 `"프리랜서 승인 시 입사일은 필수입니다."`
-- 처리: `signupStatus='APPROVED'`, `role`, `hireDate`(FREELANCER 아니면 `null`),
-  `defaultApproverId`(FREELANCER 아니면 `null`) 갱신
+- 처리: `signupStatus='APPROVED'`, `role`, `hireDate`(FREELANCER 아니면 `null`) 갱신.
+  기본 결재자는 이 API에서 다루지 않는다 — 승인 후 프리랜서 정보 관리의 결재자 변경
+  기능으로 별도 지정한다.
 
 ### 3.3 거절 — `PATCH /api/admin/users-manage/[id]/reject`
 
@@ -113,7 +114,7 @@ interface UserManageRow {
 | 컬럼 | PENDING 행 | APPROVED 행 |
 |---|---|---|
 | 이름 / 이메일 | 텍스트 | 텍스트 |
-| 권한 | 드롭다운(프리랜서/결재담당자, 필수) — 기존 가입 승인 화면의 `Select` 그대로 이관 | 배지(고정) — 기존 결재담당자 관리 화면의 `ROLE_BADGE_CLASS`(SUPER_ADMIN=indigo, APPROVER=sky)에 FREELANCER=emerald를 추가해 재사용 |
+| 권한 | 드롭다운(프리랜서/결재자, 필수) — 기존 가입 승인 화면의 `Select` 그대로 이관 | 배지(고정) — 기존 결재담당자 관리 화면의 `ROLE_BADGE_CLASS`(SUPER_ADMIN=indigo, APPROVER=sky)에 FREELANCER=emerald를 추가해 재사용 |
 | 입사일 | 권한=프리랜서 선택 시에만 `DatePicker` 노출·필수 | 프리랜서면 날짜 표시(읽기전용), 아니면 "-" |
 | 가입일 | `createdAt` 표시 | `createdAt` 표시 |
 | 상태 | "승인대기" 배지 | "활성" 배지 |

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import { users } from '@/lib/db/schema'
 import { requireSuperAdmin, toAuthErrorResponse } from '@/lib/auth/session'
@@ -37,7 +37,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         role: parsed.data.role,
         hireDate: isFreelancer ? parsed.data.hireDate : null,
       })
-      .where(eq(users.id, Number(id)))
+      .where(and(eq(users.id, Number(id)), eq(users.signupStatus, 'PENDING')))
 
     return NextResponse.json({ ok: true })
   } catch (error) {

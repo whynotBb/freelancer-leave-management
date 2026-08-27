@@ -130,6 +130,7 @@ export default function AdminUsersManagePage() {
     const wrapClass = layout === 'row' ? 'flex items-center gap-2' : 'space-y-1'
     return (
       <div className={wrapClass}>
+        {layout === 'stack' && <p className="text-xs text-muted-foreground">권한</p>}
         <Select
           value={role}
           onValueChange={(value) => setPendingRoles((prev) => ({ ...prev, [user.id]: value as PendingRole }))}
@@ -139,16 +140,19 @@ export default function AdminUsersManagePage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="FREELANCER">프리랜서</SelectItem>
-            <SelectItem value="APPROVER">결재담당자</SelectItem>
+            <SelectItem value="APPROVER">결재자</SelectItem>
           </SelectContent>
         </Select>
         {role === 'FREELANCER' && (
-          <DatePicker
-            value={pendingHireDates[user.id]}
-            onChange={(value) => setPendingHireDates((prev) => ({ ...prev, [user.id]: value }))}
-            placeholder="입사일 선택"
-            className={layout === 'row' ? 'w-40' : 'w-full'}
-          />
+          <div className={layout === 'stack' ? 'space-y-1' : undefined}>
+            {layout === 'stack' && <p className="text-xs text-muted-foreground">입사일</p>}
+            <DatePicker
+              value={pendingHireDates[user.id]}
+              onChange={(value) => setPendingHireDates((prev) => ({ ...prev, [user.id]: value }))}
+              placeholder="입사일 선택"
+              className={layout === 'stack' ? 'w-full' : 'w-40'}
+            />
+          </div>
         )}
       </div>
     )
