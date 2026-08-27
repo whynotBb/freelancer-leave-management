@@ -7,9 +7,11 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 255 }).notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: varchar('role', { length: 20 }).notNull().default('FREELANCER'), // 'SUPER_ADMIN' | 'APPROVER' | 'FREELANCER'
-  signupStatus: varchar('signup_status', { length: 20 }).notNull().default('PENDING'), // 'PENDING' | 'APPROVED' | 'REJECTED'
+  signupStatus: varchar('signup_status', { length: 20 }).notNull().default('PENDING'), // 'PENDING' | 'APPROVED' | 'REJECTED' | 'RESIGNED'
   hireDate: date('hire_date', { mode: 'string' }),
   defaultApproverId: integer('default_approver_id'),
+  resignedAt: timestamp('resigned_at'),
+  resignReason: text('resign_reason'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 

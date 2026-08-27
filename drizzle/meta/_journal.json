@@ -29,6 +29,13 @@
       "when": 1787726413362,
       "tag": "0003_attendance-based-leave-grant",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787805239496,
+      "tag": "0004_departed-user-management",
+      "breakpoints": true
     }
   ]
 }
