@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import { useSession } from 'next-auth/react'
-import { BookOpenIcon, DownloadIcon, Loader2Icon, SearchIcon } from 'lucide-react'
+import { BookOpenIcon, DownloadIcon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import { DatePicker } from '@/components/date-picker'
 import { ApproverCombobox } from '@/components/approver-combobox'
 import { LeaveAdjustmentDialog } from '@/components/leave-adjustment-dialog'
 import { AttendanceExceptionDialog } from '@/components/attendance-exception-dialog'
+import { LoadingSpinner } from '@/components/loading-spinner'
 import { PageHeader } from '@/components/page-header'
 import { PolicyInfoSheet } from '@/components/policy-info-sheet'
 import { ResignDialog } from '@/components/resign-dialog'
@@ -444,10 +445,7 @@ export default function AdminUsersPage() {
       {exportError && <p className="mb-4 text-right text-sm text-destructive">{exportError}</p>}
 
       {loadingUsers ? (
-        <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
-          <Loader2Icon className="size-4 animate-spin" />
-          불러오는 중...
-        </div>
+        <LoadingSpinner />
       ) : loadUsersError ? (
         <p className="text-sm text-destructive">{loadUsersError}</p>
       ) : filtered.length === 0 ? (
@@ -544,21 +542,24 @@ export default function AdminUsersPage() {
                     <TableCell className="text-muted-foreground">{remaining}</TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          disabled={!user.canEdit || !user.hireDate}
-                          onClick={() => setAttendanceExceptionUserId(user.id)}
-                        >
-                          만근 예외
-                        </Button>
-                        {role === 'SUPER_ADMIN' && (
+                        <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
-                            onClick={() => setResignTarget({ id: user.id, name: user.name })}
+                            disabled={!user.canEdit || !user.hireDate}
+                            onClick={() => setAttendanceExceptionUserId(user.id)}
                           >
-                            퇴사
+                            만근 예외
                           </Button>
-                        )}
+                          {role === 'SUPER_ADMIN' && (
+                            <Button
+                              variant="destructive"
+                              onClick={() => setResignTarget({ id: user.id, name: user.name })}
+                            >
+                              퇴사
+                            </Button>
+                          )}
+                        </div>
+                        <div className="h-6 w-px bg-border" />
                         <Button
                           disabled={!user.canEdit || !hasPendingChange(user)}
                           onClick={() => setPendingSave({ kind: 'fields', userId: user.id })}
@@ -597,22 +598,25 @@ export default function AdminUsersPage() {
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
                 <div className="space-y-3">{renderMobileFields(user)}</div>
-                <div className="flex flex-wrap justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    disabled={!user.canEdit || !user.hireDate}
-                    onClick={() => setAttendanceExceptionUserId(user.id)}
-                  >
-                    만근 예외
-                  </Button>
-                  {role === 'SUPER_ADMIN' && (
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       variant="outline"
-                      onClick={() => setResignTarget({ id: user.id, name: user.name })}
+                      disabled={!user.canEdit || !user.hireDate}
+                      onClick={() => setAttendanceExceptionUserId(user.id)}
                     >
-                      퇴사
+                      만근 예외
                     </Button>
-                  )}
+                    {role === 'SUPER_ADMIN' && (
+                      <Button
+                        variant="destructive"
+                        onClick={() => setResignTarget({ id: user.id, name: user.name })}
+                      >
+                        퇴사
+                      </Button>
+                    )}
+                  </div>
+                  <div className="h-6 w-px bg-border" />
                   <Button
                     disabled={!user.canEdit || !hasPendingChange(user)}
                     onClick={() => setPendingSave({ kind: 'fields', userId: user.id })}

@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2Icon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/loading-spinner'
 import { PageHeader } from '@/components/page-header'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
@@ -98,10 +98,7 @@ export default function AdminDeparturesPage() {
       />
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
-          <Loader2Icon className="size-4 animate-spin" />
-          불러오는 중...
-        </div>
+        <LoadingSpinner />
       ) : loadError ? (
         <p className="text-sm text-destructive">{loadError}</p>
       ) : users.length === 0 ? (
