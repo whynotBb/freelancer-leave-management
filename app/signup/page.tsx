@@ -3,33 +3,41 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { CheckIcon, CircleIcon } from 'lucide-react'
 import { AuthLayout } from '@/components/auth-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { isValidPassword, PASSWORD_POLICY_HINT } from '@/lib/domain/password-policy'
+import { cn } from '@/lib/utils'
+import { isValidPassword, PASSWORD_REQUIREMENTS } from '@/lib/domain/password-policy'
+
+const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function SignupPage() {
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [emailTouched, setEmailTouched] = useState(false)
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
 
+  const emailValid = email.length === 0 || EMAIL_FORMAT.test(email)
+  const passwordValid = isValidPassword(password)
+  const passwordConfirmMatches = passwordConfirm.length === 0 || passwordConfirm === password
+  const canSubmit =
+    name.trim().length > 0 &&
+    EMAIL_FORMAT.test(email) &&
+    passwordValid &&
+    passwordConfirm.length > 0 &&
+    passwordConfirm === password
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
 
-    if (!isValidPassword(password)) {
-      setError(PASSWORD_POLICY_HINT)
-      return
-    }
-    if (password !== passwordConfirm) {
-      setError('비밀번호가 일치하지 않습니다.')
-      return
-    }
+    if (!canSubmit) return
 
     const res = await fetch('/api/signup', {
       method: 'POST',
@@ -74,8 +82,13 @@ export default function SignupPage() {
             placeholder="name@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onBlur={() => setEmailTouched(true)}
+            aria-invalid={emailTouched && !emailValid}
             required
           />
+          {emailTouched && !emailValid && (
+            <p className="text-xs text-destructive">올바른 이메일 형식이 아닙니다.</p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="password">비밀번호</Label>
@@ -86,7 +99,23 @@ export default function SignupPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <p className="text-xs text-muted-foreground">{PASSWORD_POLICY_HINT}</p>
+          <ul className="space-y-0.5 pt-1">
+            {PASSWORD_REQUIREMENTS.map((req) => {
+              const met = req.test(password)
+              return (
+                <li
+                  key={req.key}
+                  className={cn(
+                    'flex items-center gap-1.5 text-xs',
+                    met ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
+                  )}
+                >
+                  {met ? <CheckIcon className="size-3.5" /> : <CircleIcon className="size-3.5" />}
+                  {req.label}
+                </li>
+              )
+            })}
+          </ul>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="passwordConfirm">비밀번호 확인</Label>
@@ -95,11 +124,13 @@ export default function SignupPage() {
             type="password"
             value={passwordConfirm}
             onChange={(e) => setPasswordConfirm(e.target.value)}
+            aria-invalid={!passwordConfirmMatches}
             required
           />
+          {!passwordConfirmMatches && <p className="text-xs text-destructive">비밀번호가 일치하지 않습니다.</p>}
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={!canSubmit}>
           가입 신청
         </Button>
       </form>
