@@ -35,6 +35,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       if (result.error === 'NOT_FOUND') {
         return NextResponse.json({ error: '대상을 찾을 수 없습니다.' }, { status: 404 })
       }
+      if (result.error === 'SUPER_ADMIN_PROTECTED') {
+        return NextResponse.json({ error: '최고관리자 계정은 퇴사 처리할 수 없습니다.' }, { status: 400 })
+      }
       return NextResponse.json(
         { error: '대기 중인 결재 건이 있습니다.', pendingCount: result.pendingCount },
         { status: 409 }

@@ -179,13 +179,15 @@ export default function AdminUsersManagePage() {
         <Button className={btnClass} variant="outline" disabled>
           비밀번호 초기화
         </Button>
-        <Button
-          className={btnClass}
-          variant="destructive"
-          onClick={() => setResignTarget({ id: user.id, name: user.name })}
-        >
-          퇴사
-        </Button>
+        {user.role !== 'SUPER_ADMIN' && (
+          <Button
+            className={btnClass}
+            variant="destructive"
+            onClick={() => setResignTarget({ id: user.id, name: user.name })}
+          >
+            퇴사
+          </Button>
+        )}
       </div>
     )
   }

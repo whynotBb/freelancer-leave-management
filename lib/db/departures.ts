@@ -16,11 +16,17 @@ export async function resignUser(params: {
   reason: string
   delegateTo?: number
 }): Promise<
-  { ok: true } | { error: 'NOT_FOUND' } | { error: 'PENDING_APPROVALS'; pendingCount: number }
+  | { ok: true }
+  | { error: 'NOT_FOUND' }
+  | { error: 'SUPER_ADMIN_PROTECTED' }
+  | { error: 'PENDING_APPROVALS'; pendingCount: number }
 > {
   const [target] = await db.select().from(users).where(eq(users.id, params.userId))
   if (!target || target.signupStatus !== 'APPROVED') {
     return { error: 'NOT_FOUND' }
+  }
+  if (target.role === 'SUPER_ADMIN') {
+    return { error: 'SUPER_ADMIN_PROTECTED' }
   }
 
   if (target.role === 'APPROVER') {
