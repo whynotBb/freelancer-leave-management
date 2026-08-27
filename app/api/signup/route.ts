@@ -4,11 +4,12 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db/client'
 import { users } from '@/lib/db/schema'
+import { isValidPassword, PASSWORD_POLICY_HINT } from '@/lib/domain/password-policy'
 
 const signupSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().refine(isValidPassword, { message: PASSWORD_POLICY_HINT }),
 })
 
 export async function POST(request: Request) {

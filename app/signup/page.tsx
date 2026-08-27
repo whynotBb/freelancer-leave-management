@@ -1,24 +1,36 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { AuthLayout } from '@/components/auth-layout'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ThemeToggle } from '@/components/theme-toggle'
+import { isValidPassword, PASSWORD_POLICY_HINT } from '@/lib/domain/password-policy'
 
 export default function SignupPage() {
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    if (!isValidPassword(password)) {
+      setError(PASSWORD_POLICY_HINT)
+      return
+    }
+    if (password !== passwordConfirm) {
+      setError('비밀번호가 일치하지 않습니다.')
+      return
+    }
+
     const res = await fetch('/api/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -34,65 +46,69 @@ export default function SignupPage() {
 
   if (submitted) {
     return (
-      <>
-        {/* Task 23에서 GNB가 생기면 그 안으로 옮길 임시 위치 */}
-        <div className="fixed top-4 right-4">
-          <ThemeToggle />
+      <AuthLayout>
+        <div className="space-y-4 text-center">
+          <p>가입 신청이 완료되었습니다. 관리자 승인 후 로그인할 수 있습니다.</p>
+          <Button onClick={() => router.push('/login')}>로그인 화면으로</Button>
         </div>
-        <div className="flex min-h-svh items-center justify-center p-6">
-          <Card className="w-full max-w-sm">
-            <CardContent className="pt-6 text-center">
-              <p>가입 신청이 완료되었습니다. 관리자 승인 후 로그인할 수 있습니다.</p>
-              <Button className="mt-4" onClick={() => router.push('/login')}>
-                로그인 화면으로
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </>
+      </AuthLayout>
     )
   }
 
   return (
-    <>
-      {/* Task 23에서 GNB가 생기면 그 안으로 옮길 임시 위치 */}
-      <div className="fixed top-4 right-4">
-        <ThemeToggle />
+    <AuthLayout>
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold">회원가입 신청</h1>
+        <p className="text-sm text-muted-foreground">아래 정보를 입력하여 계정을 만드세요</p>
       </div>
-      <div className="flex min-h-svh items-center justify-center p-6">
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle>회원가입 신청</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">이름</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-              </div>
-              <div>
-                <Label htmlFor="email">이메일</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </div>
-              <div>
-                <Label htmlFor="password">비밀번호</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full">
-                가입 신청
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </>
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="name">이름</Label>
+          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="email">이메일</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="name@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="password">비밀번호</Label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <p className="text-xs text-muted-foreground">{PASSWORD_POLICY_HINT}</p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="passwordConfirm">비밀번호 확인</Label>
+          <Input
+            id="passwordConfirm"
+            type="password"
+            value={passwordConfirm}
+            onChange={(e) => setPasswordConfirm(e.target.value)}
+            required
+          />
+        </div>
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <Button type="submit" className="w-full">
+          가입 신청
+        </Button>
+      </form>
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        이미 계정이 있으신가요?{' '}
+        <Link href="/login" className="font-medium text-foreground hover:underline">
+          로그인
+        </Link>
+      </p>
+    </AuthLayout>
   )
 }
