@@ -124,6 +124,7 @@ export async function deleteDepartedUser(userId: number): Promise<{ ok: true } |
       name: `사용자#${userId}(퇴사)`,
       email: `deleted-${userId}@deleted.local`,
       passwordHash: await bcrypt.hash(randomUUID(), 10),
+      signupStatus: 'DELETED',
     })
     .where(eq(users.id, userId))
   await db.update(users).set({ defaultApproverId: null }).where(eq(users.defaultApproverId, userId))
