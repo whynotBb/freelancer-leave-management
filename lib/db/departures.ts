@@ -10,7 +10,6 @@ import {
   notifications,
   users,
 } from '@/lib/db/schema'
-import { createNotification } from '@/lib/db/notifications'
 
 export async function resignUser(params: {
   userId: number
@@ -20,7 +19,7 @@ export async function resignUser(params: {
   { ok: true } | { error: 'NOT_FOUND' } | { error: 'PENDING_APPROVALS'; pendingCount: number }
 > {
   const [target] = await db.select().from(users).where(eq(users.id, params.userId))
-  if (!target) {
+  if (!target || target.signupStatus !== 'APPROVED') {
     return { error: 'NOT_FOUND' }
   }
 
@@ -35,19 +34,31 @@ export async function resignUser(params: {
     }
 
     if (pending.length > 0 && params.delegateTo) {
-      await db
-        .update(leaveRequests)
-        .set({ approverId: params.delegateTo })
-        .where(and(eq(leaveRequests.approverId, params.userId), eq(leaveRequests.status, 'PENDING')))
+      // 위임 재배정 + 알림 발송 + 퇴사 처리를 하나의 트랜잭션으로 묶어(스펙 5.1) 중간에
+      // 실패해도 일부만 반영되지 않도록 한다.
+      const delegateTo = params.delegateTo
+      await db.transaction(async (tx) => {
+        await tx
+          .update(leaveRequests)
+          .set({ approverId: delegateTo })
+          .where(and(eq(leaveRequests.approverId, params.userId), eq(leaveRequests.status, 'PENDING')))
 
-      for (const row of pending) {
-        await createNotification({
-          recipientId: row.userId,
-          type: 'APPROVER_CHANGED',
-          refId: row.id,
-          message: '담당 결재자의 퇴사 처리로 인해 이 신청의 결재자가 변경되었습니다.',
-        })
-      }
+        for (const row of pending) {
+          await tx.insert(notifications).values({
+            recipientId: row.userId,
+            type: 'APPROVER_CHANGED',
+            refId: row.id,
+            message: '담당 결재자의 퇴사 처리로 인해 이 신청의 결재자가 변경되었습니다.',
+          })
+        }
+
+        await tx
+          .update(users)
+          .set({ signupStatus: 'RESIGNED', resignedAt: new Date(), resignReason: params.reason })
+          .where(eq(users.id, params.userId))
+      })
+
+      return { ok: true }
     }
   }
 
@@ -107,12 +118,16 @@ export async function deleteDepartedUser(userId: number): Promise<{ ok: true } |
   }
 
   if (target.role === 'FREELANCER') {
-    await db.delete(leaveGrants).where(eq(leaveGrants.userId, userId))
-    await db.delete(leaveRequests).where(eq(leaveRequests.userId, userId))
-    await db.delete(notifications).where(eq(notifications.recipientId, userId))
-    await db.delete(approverChanges).where(eq(approverChanges.userId, userId))
-    await db.delete(attendanceExceptions).where(eq(attendanceExceptions.userId, userId))
-    await db.delete(users).where(eq(users.id, userId))
+    // 되돌릴 수 없는 완전 삭제이므로 여섯 개의 삭제 문을 하나의 트랜잭션으로 묶어
+    // 중간에 실패해도 일부 테이블만 삭제된 상태로 남지 않도록 한다.
+    await db.transaction(async (tx) => {
+      await tx.delete(leaveGrants).where(eq(leaveGrants.userId, userId))
+      await tx.delete(leaveRequests).where(eq(leaveRequests.userId, userId))
+      await tx.delete(notifications).where(eq(notifications.recipientId, userId))
+      await tx.delete(approverChanges).where(eq(approverChanges.userId, userId))
+      await tx.delete(attendanceExceptions).where(eq(attendanceExceptions.userId, userId))
+      await tx.delete(users).where(eq(users.id, userId))
+    })
     return { ok: true }
   }
 

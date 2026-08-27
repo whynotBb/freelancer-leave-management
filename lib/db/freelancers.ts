@@ -33,7 +33,7 @@ export async function getApprovedFreelancers(): Promise<FreelancerSummary[]> {
         defaultApproverName: approver.name,
       })
       .from(users)
-      .leftJoin(approver, eq(users.defaultApproverId, approver.id))
+      .leftJoin(approver, and(eq(users.defaultApproverId, approver.id), eq(approver.signupStatus, 'APPROVED')))
       .where(approvedFreelancer),
     db
       .select({ userId: leaveGrants.userId, amount: leaveGrants.amount, grantDate: leaveGrants.grantDate })
