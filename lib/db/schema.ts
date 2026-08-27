@@ -1,4 +1,5 @@
-import { boolean, date, integer, numeric, pgTable, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core'
+import { boolean, date, integer, numeric, pgTable, serial, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -12,17 +13,26 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
-export const leaveGrants = pgTable('leave_grants', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').notNull().references(() => users.id),
-  grantDate: date('grant_date', { mode: 'string' }).notNull(),
-  amount: numeric('amount', { precision: 4, scale: 1, mode: 'number' }).notNull(),
-  cycleEnd: date('cycle_end', { mode: 'string' }).notNull(),
-  expired: boolean('expired').notNull().default(false),
-  note: text('note'),
-  createdBy: integer('created_by').references(() => users.id),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-})
+export const leaveGrants = pgTable(
+  'leave_grants',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').notNull().references(() => users.id),
+    grantDate: date('grant_date', { mode: 'string' }).notNull(),
+    amount: numeric('amount', { precision: 4, scale: 1, mode: 'number' }).notNull(),
+    cycleEnd: date('cycle_end', { mode: 'string' }).notNull(),
+    expired: boolean('expired').notNull().default(false),
+    note: text('note'),
+    createdBy: integer('created_by').references(() => users.id),
+    periodStart: date('period_start', { mode: 'string' }), // 자동 발생 건에만 채움 — 배치 멱등성 보장용
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('leave_grants_user_period_unique')
+      .on(t.userId, t.periodStart)
+      .where(sql`${t.periodStart} IS NOT NULL`),
+  ]
+)
 
 export const leaveRequests = pgTable('leave_requests', {
   id: serial('id').primaryKey(),
@@ -66,3 +76,16 @@ export const approverChanges = pgTable('approver_changes', {
   changedBy: integer('changed_by').notNull().references(() => users.id),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
+
+export const attendanceExceptions = pgTable(
+  'attendance_exceptions',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').notNull().references(() => users.id),
+    periodStart: date('period_start', { mode: 'string' }).notNull(),
+    reason: text('reason').notNull(),
+    createdBy: integer('created_by').notNull().references(() => users.id),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('attendance_exceptions_user_period_unique').on(t.userId, t.periodStart)]
+)

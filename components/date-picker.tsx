@@ -14,10 +14,18 @@ interface DatePickerProps {
   placeholder?: string
   className?: string
   disabled?: boolean
+  minDate?: string
 }
 
 // 키보드로 직접 입력하지 못하도록 텍스트 인풋 대신 버튼 트리거 + 캘린더 팝오버로 구성한다.
-export function DatePicker({ value, onChange, placeholder = '날짜 선택', className, disabled }: DatePickerProps) {
+export function DatePicker({
+  value,
+  onChange,
+  placeholder = '날짜 선택',
+  className,
+  disabled,
+  minDate,
+}: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const selected = value ? parseISO(value) : undefined
 
@@ -42,6 +50,7 @@ export function DatePicker({ value, onChange, placeholder = '날짜 선택', cla
         <Calendar
           mode="single"
           selected={selected}
+          disabled={minDate ? { before: parseISO(minDate) } : undefined}
           onSelect={(date) => {
             if (!date) return
             onChange(format(date, 'yyyy-MM-dd'))

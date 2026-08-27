@@ -31,3 +31,20 @@ export function getMonthlyAnniversaryIndex(hireDate: string, date: string): numb
   if (diff < 1) return null
   return addMonthsISO(hireDate, diff) === date ? diff : null
 }
+
+export interface MonthlyEvaluationPeriod {
+  monthIndex: number
+  start: string
+  end: string
+}
+
+// 관리자가 예외를 등록할 때 "그 달에 속하는 아무 날짜"를 고르면, 그 날짜가 속한 평가월(입사일
+// 기준 앵커링)의 시작일을 역산하기 위한 함수. date는 hireDate 이후여야 한다(그 이전 날짜를
+// 넘기면 monthIndex=1로 수렴한다 — 이 프로젝트에서는 호출부가 항상 hireDate 이후 날짜만 넘긴다).
+export function findMonthlyEvaluationPeriod(hireDate: string, date: string): MonthlyEvaluationPeriod {
+  let monthIndex = 1
+  while (isOnOrAfterDate(date, addMonthsISO(hireDate, monthIndex))) {
+    monthIndex++
+  }
+  return { monthIndex, ...getMonthlyEvaluationPeriod(hireDate, monthIndex) }
+}

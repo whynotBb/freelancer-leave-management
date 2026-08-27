@@ -1,3 +1,5 @@
+import { addMonthsISO } from './date-utils'
+
 export interface GrantHistoryRow {
   grantDate: string
   amount: number
@@ -24,8 +26,15 @@ export interface ApproverChangeHistoryRow {
   changedByName: string
 }
 
+export interface AttendanceExceptionHistoryRow {
+  periodStart: string
+  reason: string
+  createdByName: string | null
+  createdAt: string
+}
+
 export interface HistoryEntry {
-  category: '발생' | '연차 조정' | '사용' | '결재자 변경' | '입사일 변경'
+  category: '연차 발생' | '연차 조정' | '사용' | '결재자 변경' | '입사일 변경' | '만근 예외'
   date: string
   detail: string
   reason: string
@@ -56,9 +65,10 @@ export function buildHistoryTimeline(params: {
   grants: GrantHistoryRow[]
   usages: UsageHistoryRow[]
   approverChanges: ApproverChangeHistoryRow[]
+  exceptions?: AttendanceExceptionHistoryRow[]
 }): HistoryEntry[] {
   const grantEntries: SortableEntry[] = params.grants.map((g) => {
-    const category = g.createdBy === null ? '발생' : g.amount === 0 ? '입사일 변경' : '연차 조정'
+    const category = g.createdBy === null ? '연차 발생' : g.amount === 0 ? '입사일 변경' : '연차 조정'
     return {
       entry: {
         category,
@@ -93,7 +103,18 @@ export function buildHistoryTimeline(params: {
     sortKey: c.createdAt,
   }))
 
-  return [...grantEntries, ...usageEntries, ...approverChangeEntries]
+  const exceptionEntries: SortableEntry[] = (params.exceptions ?? []).map((ex) => ({
+    entry: {
+      category: '만근 예외',
+      date: formatDateTime(ex.createdAt),
+      detail: `${ex.periodStart} ~ ${addMonthsISO(ex.periodStart, 1)} 미발생`,
+      reason: ex.reason,
+      actorName: ex.createdByName,
+    },
+    sortKey: ex.createdAt,
+  }))
+
+  return [...grantEntries, ...usageEntries, ...approverChangeEntries, ...exceptionEntries]
     .sort((a, b) => (a.sortKey < b.sortKey ? 1 : a.sortKey > b.sortKey ? -1 : 0))
     .map((s) => s.entry)
 }

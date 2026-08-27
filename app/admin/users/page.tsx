@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/date-picker'
 import { ApproverCombobox } from '@/components/approver-combobox'
 import { LeaveAdjustmentDialog } from '@/components/leave-adjustment-dialog'
+import { AttendanceExceptionDialog } from '@/components/attendance-exception-dialog'
 import { PageHeader } from '@/components/page-header'
 import { PolicyInfoSheet } from '@/components/policy-info-sheet'
 import { UserHistoryPanel } from '@/components/user-history-panel'
@@ -73,6 +74,9 @@ export default function AdminUsersPage() {
   const [submitting, setSubmitting] = useState(false)
   const [historyUserId, setHistoryUserId] = useState<number | null>(null)
   const [policyOpen, setPolicyOpen] = useState(false)
+  const [attendanceExceptionUserId, setAttendanceExceptionUserId] = useState<number | null>(null)
+  const [attendanceExceptionSubmitting, setAttendanceExceptionSubmitting] = useState(false)
+  const [attendanceExceptionError, setAttendanceExceptionError] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [exportError, setExportError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
@@ -298,6 +302,27 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function confirmAttendanceException(date: string, reason: string) {
+    if (attendanceExceptionUserId === null) return
+    setAttendanceExceptionSubmitting(true)
+    setAttendanceExceptionError(null)
+    try {
+      const res = await fetch(`/api/admin/users/${attendanceExceptionUserId}/attendance-exceptions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, reason }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        setAttendanceExceptionError(body?.error ?? '처리에 실패했습니다.')
+        return
+      }
+      setAttendanceExceptionUserId(null)
+    } finally {
+      setAttendanceExceptionSubmitting(false)
+    }
+  }
+
   // 모바일 카드 레이아웃 전용(데스크톱 테이블은 셀 구조가 달라 아래에서 직접 JSX를 작성한다).
   function renderMobileFields(user: FreelancerUser) {
     const draft = drafts[user.id] ?? toDraft(user)
@@ -428,7 +453,7 @@ export default function AdminUsersPage() {
                 <TableHead className="w-28">발생 연차</TableHead>
                 <TableHead className="w-28">사용 연차</TableHead>
                 <TableHead className="w-28">잔여 연차</TableHead>
-                <TableHead className="w-20 text-right"></TableHead>
+                <TableHead className="w-44 text-right"></TableHead>
                 <TableHead className="w-12 text-center">
                   <Checkbox
                     checked={allFilteredSelected}
@@ -502,7 +527,14 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell className="text-muted-foreground">{remaining}</TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-end">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          disabled={!user.canEdit || !user.hireDate}
+                          onClick={() => setAttendanceExceptionUserId(user.id)}
+                        >
+                          만근 예외
+                        </Button>
                         <Button
                           disabled={!user.canEdit || !hasPendingChange(user)}
                           onClick={() => setPendingSave({ kind: 'fields', userId: user.id })}
@@ -541,7 +573,14 @@ export default function AdminUsersPage() {
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
                 <div className="space-y-3">{renderMobileFields(user)}</div>
-                <div className="flex justify-end">
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    disabled={!user.canEdit || !user.hireDate}
+                    onClick={() => setAttendanceExceptionUserId(user.id)}
+                  >
+                    만근 예외
+                  </Button>
                   <Button
                     disabled={!user.canEdit || !hasPendingChange(user)}
                     onClick={() => setPendingSave({ kind: 'fields', userId: user.id })}
@@ -573,6 +612,22 @@ export default function AdminUsersPage() {
       />
 
       <PolicyInfoSheet open={policyOpen} onOpenChange={setPolicyOpen} />
+
+      <AttendanceExceptionDialog
+        key={attendanceExceptionUserId ?? 'none'}
+        open={attendanceExceptionUserId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAttendanceExceptionUserId(null)
+            setAttendanceExceptionError(null)
+          }
+        }}
+        userName={users.find((u) => u.id === attendanceExceptionUserId)?.name ?? ''}
+        hireDate={users.find((u) => u.id === attendanceExceptionUserId)?.hireDate ?? null}
+        onConfirm={confirmAttendanceException}
+        submitting={attendanceExceptionSubmitting}
+        error={attendanceExceptionError}
+      />
     </div>
   )
 }
