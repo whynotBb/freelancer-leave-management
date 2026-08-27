@@ -32,7 +32,7 @@ export default function LoginPage() {
   return (
     <AuthLayout>
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">관리자 로그인</h1>
+        <h1 className="text-2xl font-semibold">로그인</h1>
         <p className="text-sm text-muted-foreground">이메일과 비밀번호를 입력해주세요</p>
       </div>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">

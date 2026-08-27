@@ -13,7 +13,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       <div className="fixed top-4 right-4 z-10">
         <ThemeToggle />
       </div>
-      <div className="flex flex-col justify-between gap-10 bg-muted p-8 md:min-h-svh md:w-2/5 md:p-10">
+      <div className="flex flex-col justify-between gap-10 bg-card p-8 md:min-h-svh md:w-2/5 md:p-10">
         <div className="flex items-center gap-2">
           <Image
             src="/logo_icon.png"
@@ -23,14 +23,11 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             unoptimized
             className="rounded-[.25rem]"
           />
-          <div className="grid leading-tight">
-            <span className="text-sm font-semibold">연차관리시스템</span>
-            <span className="text-xs text-muted-foreground/60">hubilon</span>
-          </div>
+          <span className="text-lg font-semibold">연차관리시스템</span>
         </div>
         <blockquote className="hidden md:block">
           <p className="text-lg font-medium text-foreground">
-            &ldquo;프리랜서 휴가를 간편하게 관리하는 통합 시스템입니다.&rdquo;
+            &ldquo;프리랜서 연차를 간편하게 관리하는 통합 시스템입니다.&rdquo;
           </p>
           <footer className="mt-2 text-sm text-muted-foreground">hubilon</footer>
         </blockquote>

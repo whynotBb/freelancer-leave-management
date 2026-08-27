@@ -18,5 +18,7 @@ export default auth((req) => {
 })
 
 export const config = {
-  matcher: ['/((?!api/auth|_next/static|_next/image|favicon.ico).*)'],
+  // public/ 아래 정적 자산(로고 등)도 이 프록시 대상이라, 제외하지 않으면 비로그인 상태로
+  // 이미지를 요청할 때 이미지 대신 /login으로 리다이렉트되어 깨진 것처럼 보인다.
+  matcher: ['/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp)$).*)'],
 }
