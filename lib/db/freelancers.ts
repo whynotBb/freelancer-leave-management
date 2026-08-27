@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { db } from './client'
 import { leaveGrants, leaveRequests, users } from './schema'
@@ -18,34 +18,34 @@ export interface FreelancerSummary {
 
 export async function getApprovedFreelancers(): Promise<FreelancerSummary[]> {
   const approver = alias(users, 'approver')
-  const rows = await db
-    .select({
-      id: users.id,
-      name: users.name,
-      email: users.email,
-      hireDate: users.hireDate,
-      defaultApproverId: users.defaultApproverId,
-      defaultApproverName: approver.name,
-    })
-    .from(users)
-    .leftJoin(approver, eq(users.defaultApproverId, approver.id))
-    .where(and(eq(users.signupStatus, 'APPROVED'), eq(users.role, 'FREELANCER')))
+  const approvedFreelancer = and(eq(users.signupStatus, 'APPROVED'), eq(users.role, 'FREELANCER'))
 
-  const userIds = rows.map((u) => u.id)
-  // 프리랜서 수만큼 발생/사용 내역을 개별 조회하면(N+1) 목록이 커질수록 응답이 느려지므로,
-  // 전체를 한 번에 조회해 userId별로 묶은 뒤 순수 함수(calculateLeaveBalance)에 그대로 넘긴다.
-  const [allGrants, allUsages] = userIds.length
-    ? await Promise.all([
-        db
-          .select({ userId: leaveGrants.userId, amount: leaveGrants.amount, grantDate: leaveGrants.grantDate })
-          .from(leaveGrants)
-          .where(inArray(leaveGrants.userId, userIds)),
-        db
-          .select({ userId: leaveRequests.userId, requestedDays: leaveRequests.requestedDays, startDate: leaveRequests.startDate })
-          .from(leaveRequests)
-          .where(and(inArray(leaveRequests.userId, userIds), eq(leaveRequests.status, 'APPROVED'))),
-      ])
-    : [[], []]
+  // 발생/사용 내역 조회를 목록 조회 결과(userId)에 의존시키지 않고 users에 직접 조인해
+  // 같은 조건으로 걸러지도록 하면, 세 쿼리를 순차 왕복 없이 한 번에 병렬로 보낼 수 있다.
+  const [rows, allGrants, allUsages] = await Promise.all([
+    db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        hireDate: users.hireDate,
+        defaultApproverId: users.defaultApproverId,
+        defaultApproverName: approver.name,
+      })
+      .from(users)
+      .leftJoin(approver, eq(users.defaultApproverId, approver.id))
+      .where(approvedFreelancer),
+    db
+      .select({ userId: leaveGrants.userId, amount: leaveGrants.amount, grantDate: leaveGrants.grantDate })
+      .from(leaveGrants)
+      .innerJoin(users, eq(leaveGrants.userId, users.id))
+      .where(approvedFreelancer),
+    db
+      .select({ userId: leaveRequests.userId, requestedDays: leaveRequests.requestedDays, startDate: leaveRequests.startDate })
+      .from(leaveRequests)
+      .innerJoin(users, eq(leaveRequests.userId, users.id))
+      .where(and(approvedFreelancer, eq(leaveRequests.status, 'APPROVED'))),
+  ])
 
   const grantsByUser = new Map<number, { amount: number; grantDate: string }[]>()
   for (const g of allGrants) {
