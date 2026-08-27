@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { CheckIcon, CircleIcon } from 'lucide-react'
+import { CheckIcon } from 'lucide-react'
 import { AuthLayout } from '@/components/auth-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -99,18 +99,18 @@ export default function SignupPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <ul className="space-y-0.5 pt-1">
+          <ul className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
             {PASSWORD_REQUIREMENTS.map((req) => {
               const met = req.test(password)
               return (
                 <li
                   key={req.key}
                   className={cn(
-                    'flex items-center gap-1.5 text-xs',
-                    met ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
+                    'flex items-center gap-1 text-xs',
+                    met ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground/50'
                   )}
                 >
-                  {met ? <CheckIcon className="size-3.5" /> : <CircleIcon className="size-3.5" />}
+                  <CheckIcon className="size-3.5" />
                   {req.label}
                 </li>
               )
