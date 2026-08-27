@@ -72,8 +72,20 @@ describe('findMonthlyEvaluationPeriod', () => {
     })
   })
 
-  it('경계일(다음 평가월 시작일)은 새로 시작하는 평가월에 속한다', () => {
+  it('경계일(자동 발생 배치가 도는 날)은 그날 마감되는 평가월에 속한다 — getMonthlyAnniversaryIndex와 동일 기준', () => {
+    // 배치(runDailyAttendanceGrantBatch)는 이 날짜를 getMonthlyAnniversaryIndex로 monthIndex=1로
+    // 판정해 그 자리에서 발생시킨다. 관리자가 "오늘" 날짜로 만근 예외를 등록해 당일 발생을
+    // 막으려면, 이 함수도 같은 monthIndex=1(마감되는 평가월)을 가리켜야 한다 — 다음 평가월(2)로
+    // 넘겨버리면 예외가 엉뚱한 달에 등록되어 당일 발생을 막지 못한다.
     expect(findMonthlyEvaluationPeriod('2026-03-15', '2026-04-15')).toEqual({
+      monthIndex: 1,
+      start: '2026-03-15',
+      end: '2026-04-15',
+    })
+  })
+
+  it('경계일 다음 날은 새로 시작한 평가월에 속한다', () => {
+    expect(findMonthlyEvaluationPeriod('2026-03-15', '2026-04-16')).toEqual({
       monthIndex: 2,
       start: '2026-04-15',
       end: '2026-05-15',
