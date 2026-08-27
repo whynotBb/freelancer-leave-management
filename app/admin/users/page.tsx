@@ -12,6 +12,7 @@ import { LeaveAdjustmentDialog } from '@/components/leave-adjustment-dialog'
 import { AttendanceExceptionDialog } from '@/components/attendance-exception-dialog'
 import { PageHeader } from '@/components/page-header'
 import { PolicyInfoSheet } from '@/components/policy-info-sheet'
+import { ResignDialog } from '@/components/resign-dialog'
 import { UserHistoryPanel } from '@/components/user-history-panel'
 import {
   Table,
@@ -77,6 +78,7 @@ export default function AdminUsersPage() {
   const [attendanceExceptionUserId, setAttendanceExceptionUserId] = useState<number | null>(null)
   const [attendanceExceptionSubmitting, setAttendanceExceptionSubmitting] = useState(false)
   const [attendanceExceptionError, setAttendanceExceptionError] = useState<string | null>(null)
+  const [resignTarget, setResignTarget] = useState<{ id: number; name: string } | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [exportError, setExportError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
@@ -549,6 +551,14 @@ export default function AdminUsersPage() {
                         >
                           만근 예외
                         </Button>
+                        {role === 'SUPER_ADMIN' && (
+                          <Button
+                            variant="outline"
+                            onClick={() => setResignTarget({ id: user.id, name: user.name })}
+                          >
+                            퇴사
+                          </Button>
+                        )}
                         <Button
                           disabled={!user.canEdit || !hasPendingChange(user)}
                           onClick={() => setPendingSave({ kind: 'fields', userId: user.id })}
@@ -595,6 +605,14 @@ export default function AdminUsersPage() {
                   >
                     만근 예외
                   </Button>
+                  {role === 'SUPER_ADMIN' && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setResignTarget({ id: user.id, name: user.name })}
+                    >
+                      퇴사
+                    </Button>
+                  )}
                   <Button
                     disabled={!user.canEdit || !hasPendingChange(user)}
                     onClick={() => setPendingSave({ kind: 'fields', userId: user.id })}
@@ -626,6 +644,13 @@ export default function AdminUsersPage() {
       />
 
       <PolicyInfoSheet open={policyOpen} onOpenChange={setPolicyOpen} />
+
+      <ResignDialog
+        open={resignTarget !== null}
+        onOpenChange={(open) => !open && setResignTarget(null)}
+        userId={resignTarget?.id ?? null}
+        userName={resignTarget?.name ?? ''}
+      />
 
       <AttendanceExceptionDialog
         key={attendanceExceptionUserId ?? 'none'}

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/page-header'
+import { ResignDialog } from '@/components/resign-dialog'
 import {
   Table,
   TableBody,
@@ -25,6 +27,7 @@ function roleLabel(role: ApproverUser['role']) {
 
 export default function AdminApproversPage() {
   const [approvers, setApprovers] = useState<ApproverUser[]>([])
+  const [resignTarget, setResignTarget] = useState<{ id: number; name: string } | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/approvers')
@@ -45,6 +48,7 @@ export default function AdminApproversPage() {
                 <TableHead>이름</TableHead>
                 <TableHead>이메일</TableHead>
                 <TableHead>역할</TableHead>
+                <TableHead className="text-right"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -54,6 +58,13 @@ export default function AdminApproversPage() {
                   <TableCell className="text-muted-foreground">{a.email}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{roleLabel(a.role)}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {a.role === 'APPROVER' && (
+                      <Button variant="outline" onClick={() => setResignTarget({ id: a.id, name: a.name })}>
+                        퇴사
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -65,12 +76,26 @@ export default function AdminApproversPage() {
               <div key={a.id} className="space-y-2 rounded-lg border p-4">
                 <p className="font-medium">{a.name}</p>
                 <p className="text-sm text-muted-foreground">{a.email}</p>
-                <Badge variant="outline">{roleLabel(a.role)}</Badge>
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline">{roleLabel(a.role)}</Badge>
+                  {a.role === 'APPROVER' && (
+                    <Button variant="outline" onClick={() => setResignTarget({ id: a.id, name: a.name })}>
+                      퇴사
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </>
       )}
+
+      <ResignDialog
+        open={resignTarget !== null}
+        onOpenChange={(open) => !open && setResignTarget(null)}
+        userId={resignTarget?.id ?? null}
+        userName={resignTarget?.name ?? ''}
+      />
     </div>
   )
 }
