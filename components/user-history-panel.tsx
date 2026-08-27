@@ -24,7 +24,7 @@ interface HistoryUser {
 }
 
 interface HistoryEntry {
-  category: '연차 발생' | '연차 조정' | '사용' | '결재자 변경' | '입사일 변경' | '만근 예외'
+  category: '연차 자동 발생' | '연차 조정' | '사용' | '결재자 변경' | '입사일 변경' | '만근 예외'
   date: string
   detail: string
   reason: string
@@ -32,7 +32,7 @@ interface HistoryEntry {
 }
 
 const CATEGORY_BADGE_CLASS: Record<HistoryEntry['category'], string> = {
-  '연차 발생': 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+  '연차 자동 발생': 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
   '연차 조정': 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300',
   사용: 'border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300',
   '결재자 변경': 'border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300',

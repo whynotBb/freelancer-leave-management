@@ -55,7 +55,7 @@ describe('buildHistorySheetRows', () => {
         name: '홍길동',
         email: 'hong@example.com',
         history: [
-          { category: '연차 발생', date: '2026-04-01 09:00', detail: '+1일', reason: '-', actorName: null },
+          { category: '연차 자동 발생', date: '2026-04-01 09:00', detail: '+1일', reason: '-', actorName: '시스템' },
         ],
       },
       {
@@ -70,11 +70,11 @@ describe('buildHistorySheetRows', () => {
       {
         이름: '홍길동',
         이메일: 'hong@example.com',
-        구분: '연차 발생',
+        구분: '연차 자동 발생',
         일시: '2026-04-01 09:00',
         내용: '+1일',
         사유: '-',
-        처리자: '-',
+        처리자: '시스템',
       },
       {
         이름: '김철수',

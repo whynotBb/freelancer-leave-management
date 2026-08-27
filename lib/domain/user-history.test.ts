@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildHistoryTimeline } from './user-history'
 
 describe('buildHistoryTimeline', () => {
-  it('createdBy가 없는 leaveGrants 행은 "연차 발생"으로 분류하고 양수 금액에 +를 붙인다', () => {
+  it('createdBy가 없는 leaveGrants 행은 "연차 자동 발생"으로 분류하고 양수 금액에 +를 붙이며 처리자를 "시스템"으로 표시한다', () => {
     const result = buildHistoryTimeline({
       grants: [
         {
@@ -19,11 +19,11 @@ describe('buildHistoryTimeline', () => {
     })
     expect(result).toEqual([
       {
-        category: '연차 발생',
+        category: '연차 자동 발생',
         date: '2026-04-01 09:00',
         detail: '+1일',
         reason: '-',
-        actorName: null,
+        actorName: '시스템',
       },
     ])
   })
@@ -216,7 +216,7 @@ describe('buildHistoryTimeline', () => {
         },
       ],
     })
-    expect(result.map((r) => r.category)).toEqual(['만근 예외', '사용', '결재자 변경', '연차 발생'])
+    expect(result.map((r) => r.category)).toEqual(['만근 예외', '사용', '결재자 변경', '연차 자동 발생'])
   })
 
   it('만근 예외 행은 "만근 예외"로 분류하고 평가월 구간을 detail에 표시한다', () => {

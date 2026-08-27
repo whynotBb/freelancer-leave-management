@@ -53,7 +53,7 @@ export async function runDailyAttendanceGrantBatch(
           amount: 1,
           cycleEnd: cycle.end,
           periodStart,
-          note: `${periodMonth}월 만근으로 인한 연차 자동 발생(시스템)`,
+          note: `${periodMonth}월 만근으로 인한 연차 자동 발생`,
           createdBy: null,
         })
         granted++
