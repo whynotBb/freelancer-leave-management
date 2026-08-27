@@ -44,3 +44,7 @@ next-env.d.ts
 .vercel
 .env*.local
 .gstack/
+
+# IDE / agent tooling local state
+.idea/
+.claude/

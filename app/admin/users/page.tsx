@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import { useSession } from 'next-auth/react'
-import { DownloadIcon, SearchIcon } from 'lucide-react'
+import { BookOpenIcon, DownloadIcon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import { DatePicker } from '@/components/date-picker'
 import { ApproverCombobox } from '@/components/approver-combobox'
 import { LeaveAdjustmentDialog } from '@/components/leave-adjustment-dialog'
 import { PageHeader } from '@/components/page-header'
+import { PolicyInfoSheet } from '@/components/policy-info-sheet'
 import { UserHistoryPanel } from '@/components/user-history-panel'
 import {
   Table,
@@ -71,6 +72,7 @@ export default function AdminUsersPage() {
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [historyUserId, setHistoryUserId] = useState<number | null>(null)
+  const [policyOpen, setPolicyOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [exportError, setExportError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
@@ -311,6 +313,7 @@ export default function AdminUsersPage() {
               onChange={(value) => updateDraft(user.id, 'hireDate', value)}
               placeholder="입사일 선택"
               className="w-full"
+              disabled={disabled}
             />
           </div>
           <div className="space-y-1">
@@ -356,7 +359,7 @@ export default function AdminUsersPage() {
           </div>
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">잔여 연차</p>
-            <p className="flex h-9 items-center rounded-md border border-border bg-muted/30 px-3 text-sm text-muted-foreground">
+            <p className="flex h-9 items-center px-3 py-1 text-base text-muted-foreground md:text-sm">
               {remaining}
             </p>
           </div>
@@ -367,7 +370,16 @@ export default function AdminUsersPage() {
 
   return (
     <div className="w-full">
-      <PageHeader title="프리랜서 정보 관리" description="프리랜서의 입사일, 기본 결재자, 연차 정보를 관리합니다." />
+      <PageHeader
+        title="프리랜서 정보 관리"
+        description="프리랜서의 입사일, 기본 결재자, 연차 정보를 관리합니다."
+        action={
+          <Button variant="outline" onClick={() => setPolicyOpen(true)}>
+            <BookOpenIcon className="size-4" />
+            이용 안내
+          </Button>
+        }
+      />
 
       <div className="mb-4 flex items-center justify-end gap-2">
         <div className="relative">
@@ -450,6 +462,7 @@ export default function AdminUsersPage() {
                         value={draft.hireDate || undefined}
                         onChange={(value) => updateDraft(user.id, 'hireDate', value)}
                         placeholder="입사일 선택"
+                        disabled={!user.canEdit}
                       />
                     </TableCell>
                     <TableCell>
@@ -558,6 +571,8 @@ export default function AdminUsersPage() {
         onOpenChange={(open) => !open && setHistoryUserId(null)}
         user={users.find((u) => u.id === historyUserId) ?? null}
       />
+
+      <PolicyInfoSheet open={policyOpen} onOpenChange={setPolicyOpen} />
     </div>
   )
 }

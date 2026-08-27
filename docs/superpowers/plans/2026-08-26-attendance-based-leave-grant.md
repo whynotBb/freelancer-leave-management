@@ -618,6 +618,24 @@ git add app/api/cron/attendance-grant/route.ts vercel.json
 git commit -m "feat: 만근 예외 확인 후 자동 연차 발생하는 일일 Cron 엔드포인트 추가"
 ```
 
+- [ ] **Step 7: Supabase 무료 플랜 비활성 정지(pause) 방지 확인**
+
+Supabase Free 플랜은 **7일간 DB 활동이 없으면 프로젝트가 자동 일시정지**된다(대시보드 접속이
+아니라 실제 DB 쿼리 기준). 이 프로젝트는 Vercel Marketplace로 붙인 Supabase Free 플랜을
+사용하므로 이 정책이 그대로 적용된다.
+
+이 Cron은 매일 1회(`0 18 * * *`) `runDailyAttendanceGrantBatch`를 실행하며 반드시 DB 쿼리를
+수행하므로, **별도의 keepalive 로직을 추가하지 않아도 이 Cron 자체가 Supabase 비활성 정지
+방지 역할을 겸한다.** 별도 ping 엔드포인트나 GitHub Actions 스케줄러를 새로 만들 필요는 없다.
+
+단, 다음은 배포 후 별도로 확인이 필요하다(이 계획의 코드 작업 범위 밖 — 배포 인프라 확인):
+- 이 효과는 **Vercel에 실제로 배포되고 Cron이 등록된 이후에만** 발생한다. 로컬 개발 단계나
+  배포 전에는 정지 방지 효과가 없다.
+- 배포 후 Vercel 대시보드 → 해당 프로젝트 → Cron Jobs에서 이 작업이 매일 정상 실행되는지
+  최초 1회 확인한다. 실행이 여러 날 연속 실패하면(예: 배포 오류, `CRON_SECRET` 미설정) 정지
+  방지 효과도 함께 사라지므로, 실패가 반복되면 정지 방지 목적의 대체 수단(Uptime Robot 등
+  외부 스케줄러로 이 엔드포인트를 주기 호출)을 검토한다.
+
 ---
 
 ### Task 6: 만근 예외 등록 API 라우트
