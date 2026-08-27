@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import { useSession } from 'next-auth/react'
-import { BookOpenIcon, DownloadIcon, SearchIcon } from 'lucide-react'
+import { BookOpenIcon, DownloadIcon, Loader2Icon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -80,14 +80,21 @@ export default function AdminUsersPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [exportError, setExportError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
+  const [loadingUsers, setLoadingUsers] = useState(true)
+  const [loadUsersError, setLoadUsersError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/users')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('목록을 불러오지 못했습니다.')
+        return res.json()
+      })
       .then((list: FreelancerUser[]) => {
         setUsers(list)
         setDrafts(Object.fromEntries(list.map((u) => [u.id, toDraft(u)])))
       })
+      .catch(() => setLoadUsersError('목록을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.'))
+      .finally(() => setLoadingUsers(false))
   }, [])
 
   useEffect(() => {
@@ -434,7 +441,14 @@ export default function AdminUsersPage() {
 
       {exportError && <p className="mb-4 text-right text-sm text-destructive">{exportError}</p>}
 
-      {filtered.length === 0 ? (
+      {loadingUsers ? (
+        <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+          <Loader2Icon className="size-4 animate-spin" />
+          불러오는 중...
+        </div>
+      ) : loadUsersError ? (
+        <p className="text-sm text-destructive">{loadUsersError}</p>
+      ) : filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           {search
             ? `'${search}' 검색 결과가 없습니다.`
