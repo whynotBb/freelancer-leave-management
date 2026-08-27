@@ -10,7 +10,6 @@ import {
   LayoutDashboardIcon,
   FileTextIcon,
   InboxIcon,
-  UserCheckIcon,
   UsersIcon,
   ShieldIcon,
   KeyRoundIcon,
@@ -65,9 +64,8 @@ const COMMON_LINKS = [
 // 관리자 전용 메뉴: 실제로 페이지가 존재하는 항목만 나열한다. 각 항목의 roles가 현재
 // 로그인한 사용자의 role을 포함할 때만 노출한다.
 const ADMIN_LINKS = [
-  { href: '/admin/signups', label: '가입 승인', icon: UserCheckIcon, roles: ['SUPER_ADMIN'] },
+  { href: '/admin/users-manage', label: '사용자 관리', icon: UserCogIcon, roles: ['SUPER_ADMIN'] },
   { href: '/admin/users', label: '프리랜서 정보 관리', icon: UsersIcon, roles: ['SUPER_ADMIN', 'APPROVER'] },
-  { href: '/admin/approvers', label: '결재담당자 관리', icon: UserCogIcon, roles: ['SUPER_ADMIN'] },
   { href: '/admin/departures', label: '퇴사자 관리', icon: UserMinusIcon, roles: ['SUPER_ADMIN'] },
 ]
 
