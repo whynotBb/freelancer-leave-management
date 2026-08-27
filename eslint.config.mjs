@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 중첩된 git worktree(.claude/worktrees/**)의 .next 빌드 산출물이 스캔되는 것을 방지
+    "**/.next/**",
+    ".claude/**",
   ]),
 ]);
 
