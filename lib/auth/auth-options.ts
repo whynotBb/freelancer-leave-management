@@ -22,6 +22,9 @@ export const authConfig: NextAuthConfig = {
         const isValidPassword = await bcrypt.compare(password, user.passwordHash)
         if (!isValidPassword) return null
 
+        if (user.signupStatus === 'RESIGNED') {
+          throw new Error('퇴사 처리된 계정입니다.')
+        }
         if (user.signupStatus !== 'APPROVED') {
           throw new Error('가입 승인 대기 중이거나 거절된 계정입니다.')
         }
