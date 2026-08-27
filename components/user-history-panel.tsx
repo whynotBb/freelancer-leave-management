@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/loading-spinner'
 
 interface HistoryUser {
   id: number
@@ -143,7 +144,7 @@ export function UserHistoryPanel({ open, onOpenChange, user }: UserHistoryPanelP
               <p className="mb-2 text-sm font-medium">이력</p>
               <div className="min-h-0 flex-1 overflow-y-auto pr-1">
                 {loading ? (
-                  <p className="text-sm text-muted-foreground">불러오는 중...</p>
+                  <LoadingSpinner className="py-8" />
                 ) : history.length === 0 ? (
                   <p className="text-sm text-muted-foreground">이력이 없습니다.</p>
                 ) : (
