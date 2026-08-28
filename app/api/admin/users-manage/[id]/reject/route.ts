@@ -1,18 +1,28 @@
 import { NextResponse } from 'next/server'
 import { and, eq } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
-import { users } from '@/lib/db/schema'
+import { accountEvents, users } from '@/lib/db/schema'
 import { requireSuperAdmin, toAuthErrorResponse } from '@/lib/auth/session'
 
 export async function PATCH(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireSuperAdmin()
+    const session = await requireSuperAdmin()
+    const actorId = Number((session.user as { id?: string }).id)
     const { id } = await params
 
-    await db
+    const updated = await db
       .update(users)
       .set({ signupStatus: 'REJECTED' })
       .where(and(eq(users.id, Number(id)), eq(users.signupStatus, 'PENDING')))
+      .returning({ id: users.id })
+
+    if (updated.length > 0) {
+      await db.insert(accountEvents).values({
+        userId: Number(id),
+        actorId,
+        action: 'SIGNUP_REJECTED',
+      })
+    }
 
     return NextResponse.json({ ok: true })
   } catch (error) {
