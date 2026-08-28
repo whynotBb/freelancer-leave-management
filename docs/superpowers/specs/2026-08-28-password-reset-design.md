@@ -163,8 +163,14 @@ session: {
 - 제출 → `POST /api/auth/change-password` (`requireApprovedUser()`로 게이트, 세션의 사용자
   본인만 대상) → bcrypt 해시 후 `passwordHash` 갱신, `mustChangePassword=false`,
   `passwordChangedAt=now()`
-- 성공 시 `/dashboard`로 이동(다른 화면들과 동일하게 임시 404 — Task 18~22 미구현 안내를
-  그대로 따름, 이 문서에서 새로 만들지 않음)
+- **성공 후 자동으로 로그인 화면으로 보내고 새 비밀번호로 다시 로그인하게 한다(`/dashboard`로
+  바로 들여보내지 않는다).** 이유: 세션은 JWT라 발급 시점의 `mustChangePassword=true` 값이
+  세션에 그대로 박혀 있어서, DB만 `false`로 바꿔도 세션 토큰 자체는 갱신되지 않는다 — 그대로
+  두면 6.2절의 강제 이동 게이트가 계속 `/change-password`로 되돌려보내는 무한 루프가 된다.
+  같은 이유로 6.2절의 세션 무효화 규칙도 자기 자신이 방금 바꾼 비밀번호에 대해 그대로
+  적용된다(예외 없음). 그러니 변경 성공 시 클라이언트에서 로그아웃 처리 후 로그인 화면으로
+  이동시키고, 로그인 화면에 "비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요"
+  안내를 보여준다
 
 ## 8. 감사 로그 통합
 
