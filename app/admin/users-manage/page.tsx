@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { SearchIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/date-picker'
+import { Input } from '@/components/ui/input'
 import { LoadingSpinner } from '@/components/loading-spinner'
 import { PageHeader } from '@/components/page-header'
 import { ResignDialog } from '@/components/resign-dialog'
@@ -44,11 +46,11 @@ const ROLE_LABEL: Record<ManagedUser['role'], string> = {
 
 const ROLE_BADGE_CLASS: Record<ManagedUser['role'], string> = {
   SUPER_ADMIN:
-    'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300',
+    'border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-300',
   APPROVER:
     'border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300',
   FREELANCER:
-    'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+    'border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300',
 }
 
 const STATUS_LABEL: Record<ManagedUser['signupStatus'], string> = {
@@ -73,6 +75,7 @@ export default function AdminUsersManagePage() {
   const [rowErrors, setRowErrors] = useState<Record<number, string>>({})
   const [decidingId, setDecidingId] = useState<number | null>(null)
   const [resignTarget, setResignTarget] = useState<{ id: number; name: string } | null>(null)
+  const [search, setSearch] = useState('')
 
   function load() {
     setLoading(true)
@@ -92,7 +95,12 @@ export default function AdminUsersManagePage() {
   }, [])
 
   const pendingCount = users.filter((u) => u.signupStatus === 'PENDING').length
-  const visible = tab === 'pending' ? users.filter((u) => u.signupStatus === 'PENDING') : users
+  const visible = useMemo(() => {
+    const query = search.toLowerCase()
+    return users
+      .filter((u) => (tab === 'pending' ? u.signupStatus === 'PENDING' : true))
+      .filter((u) => u.name.toLowerCase().includes(query) || u.email.toLowerCase().includes(query))
+  }, [users, tab, search])
 
   function getPendingRole(id: number): PendingRole {
     return pendingRoles[id] ?? 'FREELANCER'
@@ -200,13 +208,24 @@ export default function AdminUsersManagePage() {
     <div className="w-full">
       <PageHeader title="사용자 관리" description="가입 승인, 권한, 퇴사 처리를 한 화면에서 관리합니다." />
 
-      <div className="mb-4 flex items-center gap-2">
-        <Button variant={tab === 'all' ? 'default' : 'outline'} onClick={() => setTab('all')}>
-          전체 {users.length}
-        </Button>
-        <Button variant={tab === 'pending' ? 'default' : 'outline'} onClick={() => setTab('pending')}>
-          승인대기 {pendingCount}
-        </Button>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Button variant={tab === 'all' ? 'default' : 'outline'} onClick={() => setTab('all')}>
+            전체 {users.length}
+          </Button>
+          <Button variant={tab === 'pending' ? 'default' : 'outline'} onClick={() => setTab('pending')}>
+            승인대기 {pendingCount}
+          </Button>
+        </div>
+        <div className="relative">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="이름/이메일 검색"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-56 pl-8"
+          />
+        </div>
       </div>
 
       {loading ? (
@@ -215,7 +234,11 @@ export default function AdminUsersManagePage() {
         <p className="text-sm text-destructive">{loadError}</p>
       ) : visible.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          {tab === 'pending' ? '승인 대기 중인 사용자가 없습니다.' : '표시할 사용자가 없습니다.'}
+          {search
+            ? `'${search}' 검색 결과가 없습니다.`
+            : tab === 'pending'
+              ? '승인 대기 중인 사용자가 없습니다.'
+              : '표시할 사용자가 없습니다.'}
         </p>
       ) : (
         <>

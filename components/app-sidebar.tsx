@@ -76,9 +76,16 @@ const NO_CHROME_ROUTES = ['/login', '/signup']
 
 const ALL_LINKS = [...COMMON_LINKS, ...ADMIN_LINKS]
 
+// '/admin/users'가 '/admin/users-manage'의 접두사라 startsWith만으로는 두 메뉴가
+// 동시에 활성화된다. 경로 전체가 같거나 '/'로 이어지는 하위 경로일 때만 일치로 본다.
+function isLinkActive(pathname: string | null, href: string) {
+  if (!pathname) return false
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
+
 function getPageTitle(pathname: string | null) {
   if (!pathname) return ''
-  return ALL_LINKS.find((link) => pathname.startsWith(link.href))?.label ?? ''
+  return ALL_LINKS.find((link) => isLinkActive(pathname, link.href))?.label ?? ''
 }
 
 function getInitial(name: string) {
@@ -129,7 +136,7 @@ export function AppSidebar() {
                 <SidebarMenuItem key={link.href}>
                   <SidebarMenuButton
                     render={<Link href={link.href} />}
-                    isActive={pathname?.startsWith(link.href)}
+                    isActive={isLinkActive(pathname, link.href)}
                     onClick={closeOnMobile}
                   >
                     <link.icon />
@@ -149,7 +156,7 @@ export function AppSidebar() {
                   <SidebarMenuItem key={link.href}>
                     <SidebarMenuButton
                       render={<Link href={link.href} />}
-                      isActive={pathname?.startsWith(link.href)}
+                      isActive={isLinkActive(pathname, link.href)}
                       onClick={closeOnMobile}
                     >
                       <link.icon />
