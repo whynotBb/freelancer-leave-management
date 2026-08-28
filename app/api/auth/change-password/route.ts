@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '@/lib/db/client'
 import { users } from '@/lib/db/schema'
-import { requireApprovedUser, toAuthErrorResponse } from '@/lib/auth/session'
+import { ForbiddenError, requireApprovedUser, toAuthErrorResponse } from '@/lib/auth/session'
 import { isValidPassword, PASSWORD_POLICY_HINT } from '@/lib/domain/password-policy'
 
 const bodySchema = z.object({
@@ -14,6 +14,12 @@ const bodySchema = z.object({
 export async function POST(request: Request) {
   try {
     const session = await requireApprovedUser()
+    // 이 엔드포인트는 관리자 강제 초기화 플로우의 종착점으로만 존재한다(스펙에서
+    // 일반적인 자기서비스 비밀번호 변경은 범위 밖으로 명시) — 강제 대상이 아닌
+    // 세션에서의 호출은 거부한다.
+    if (!(session.user as { mustChangePassword?: boolean }).mustChangePassword) {
+      throw new ForbiddenError('비밀번호 변경이 필요한 계정이 아닙니다.')
+    }
     const userId = Number((session.user as { id?: string }).id)
 
     let body: unknown

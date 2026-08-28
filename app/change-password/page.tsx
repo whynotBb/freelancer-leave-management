@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import { CheckIcon } from 'lucide-react'
 import { AuthLayout } from '@/components/auth-layout'
 import { Button } from '@/components/ui/button'
@@ -13,10 +13,21 @@ import { isValidPassword, PASSWORD_REQUIREMENTS } from '@/lib/domain/password-po
 
 export default function ChangePasswordPage() {
   const router = useRouter()
+  const { data: session, status } = useSession()
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  const mustChangePassword = (session?.user as { mustChangePassword?: boolean } | undefined)?.mustChangePassword
+
+  // 강제 초기화 대상이 아닌 사용자가 URL을 직접 입력해 들어온 경우를 위한 UX 보완이다
+  // (실제 보안 경계는 API 쪽의 mustChangePassword 검사).
+  useEffect(() => {
+    if (status === 'authenticated' && !mustChangePassword) {
+      router.replace('/dashboard')
+    }
+  }, [status, mustChangePassword, router])
 
   const passwordValid = isValidPassword(password)
   const passwordConfirmMatches = passwordConfirm.length === 0 || passwordConfirm === password
@@ -46,6 +57,10 @@ export default function ChangePasswordPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (status !== 'authenticated' || !mustChangePassword) {
+    return null
   }
 
   return (

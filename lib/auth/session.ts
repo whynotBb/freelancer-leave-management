@@ -24,18 +24,21 @@ export async function requireApprovedUser() {
   }
   const userId = Number((session.user as { id?: string }).id)
 
-  // 비밀번호가 이 세션이 발급된 뒤에 바뀌었으면(관리자 초기화 포함) 그 세션은 더 이상
-  // 유효하지 않다. 가입상태 확인(아래)과 달리 캐시하지 않고 매 요청 확인한다 — 비밀번호
-  // 초기화는 보안 민감도가 더 높아 지연을 두지 않기로 했다(스펙 6.2절).
-  const tokenIssuedAt = (session.user as { iat?: number }).iat
+  // 비밀번호가 이 세션이 "로그인된" 뒤에 바뀌었으면(관리자 초기화 포함) 그 세션은 더
+  // 이상 유효하지 않다. JWT의 iat는 세션이 재조회될 때마다(페이지 이동, API 호출 등)
+  // 새 값으로 재발급되어 "로그인 시점" 비교에 쓸 수 없으므로, 로그인 시점에만 찍히는
+  // loginAt 클레임과 비교한다. 가입상태 확인(아래)과 달리 캐시하지 않고 매 요청
+  // 확인한다 — 비밀번호 초기화는 보안 민감도가 더 높아 지연을 두지 않기로 했다(스펙
+  // 6.2절).
+  const loginAt = (session.user as { loginAt?: number }).loginAt
   const [passwordRow] = await db
     .select({ passwordChangedAt: users.passwordChangedAt })
     .from(users)
     .where(eq(users.id, userId))
   if (
     passwordRow?.passwordChangedAt &&
-    tokenIssuedAt !== undefined &&
-    passwordRow.passwordChangedAt.getTime() > tokenIssuedAt * 1000
+    loginAt !== undefined &&
+    passwordRow.passwordChangedAt.getTime() > loginAt * 1000
   ) {
     throw new UnauthorizedError('비밀번호가 변경되어 다시 로그인해야 합니다.')
   }

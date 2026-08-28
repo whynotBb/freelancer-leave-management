@@ -30,7 +30,9 @@ const TEMP_PASSWORD_ALL =
 const TEMP_PASSWORD_LENGTH = 12
 
 function pickRandomChar(charset: string): string {
-  return charset[Math.floor(Math.random() * charset.length)]
+  const buf = new Uint32Array(1)
+  globalThis.crypto.getRandomValues(buf)
+  return charset[buf[0] % charset.length]
 }
 
 // isValidPassword가 요구하는 대문자/숫자/특수문자를 각각 최소 1개씩 먼저 뽑아 넣고
@@ -48,7 +50,9 @@ export function generateTempPassword(): string {
   const chars = [...required, ...rest]
 
   for (let i = chars.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
+    const buf = new Uint32Array(1)
+    globalThis.crypto.getRandomValues(buf)
+    const j = buf[0] % (i + 1)
     ;[chars[i], chars[j]] = [chars[j], chars[i]]
   }
 
