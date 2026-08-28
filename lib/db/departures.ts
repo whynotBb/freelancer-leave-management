@@ -77,16 +77,20 @@ export async function resignUser(params: {
     }
   }
 
-  await db
-    .update(users)
-    .set({ signupStatus: 'RESIGNED', resignedAt: new Date(), resignReason: params.reason })
-    .where(eq(users.id, params.userId))
+  // 계정 상태 변경과 이력 기록을 하나의 트랜잭션으로 묶어 이력 insert가 실패해도
+  // 상태 변경만 반영되고 이력이 누락되는 일이 없도록 한다.
+  await db.transaction(async (tx) => {
+    await tx
+      .update(users)
+      .set({ signupStatus: 'RESIGNED', resignedAt: new Date(), resignReason: params.reason })
+      .where(eq(users.id, params.userId))
 
-  await db.insert(accountEvents).values({
-    userId: params.userId,
-    actorId: params.actorId,
-    action: 'RESIGNED',
-    reason: params.reason,
+    await tx.insert(accountEvents).values({
+      userId: params.userId,
+      actorId: params.actorId,
+      action: 'RESIGNED',
+      reason: params.reason,
+    })
   })
 
   return { ok: true }

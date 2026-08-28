@@ -33,26 +33,30 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const isFreelancer = parsed.data.role === 'FREELANCER'
     const hireDate = isFreelancer ? (parsed.data.hireDate ?? null) : null
 
-    const updated = await db
-      .update(users)
-      .set({
-        signupStatus: 'APPROVED',
-        role: parsed.data.role,
-        hireDate,
-      })
-      .where(and(eq(users.id, Number(id)), eq(users.signupStatus, 'PENDING')))
-      .returning({ id: users.id })
+    // 계정 상태 변경과 이력 기록을 하나의 트랜잭션으로 묶어 이력 insert가 실패해도
+    // 상태 변경만 반영되고 이력이 누락되는 일이 없도록 한다.
+    await db.transaction(async (tx) => {
+      const updated = await tx
+        .update(users)
+        .set({
+          signupStatus: 'APPROVED',
+          role: parsed.data.role,
+          hireDate,
+        })
+        .where(and(eq(users.id, Number(id)), eq(users.signupStatus, 'PENDING')))
+        .returning({ id: users.id })
 
-    // 이미 처리된(PENDING이 아닌) 계정이면 update가 0건이라 이력도 남기지 않는다.
-    if (updated.length > 0) {
-      await db.insert(accountEvents).values({
-        userId: Number(id),
-        actorId,
-        action: 'SIGNUP_APPROVED',
-        role: parsed.data.role,
-        hireDate,
-      })
-    }
+      // 이미 처리된(PENDING이 아닌) 계정이면 update가 0건이라 이력도 남기지 않는다.
+      if (updated.length > 0) {
+        await tx.insert(accountEvents).values({
+          userId: Number(id),
+          actorId,
+          action: 'SIGNUP_APPROVED',
+          role: parsed.data.role,
+          hireDate,
+        })
+      }
+    })
 
     return NextResponse.json({ ok: true })
   } catch (error) {
