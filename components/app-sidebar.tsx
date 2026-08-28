@@ -17,6 +17,7 @@ import {
   CircleHelpIcon,
   UserCogIcon,
   UserMinusIcon,
+  HistoryIcon,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -67,6 +68,7 @@ const ADMIN_LINKS = [
   { href: '/admin/users-manage', label: '사용자 관리', icon: UserCogIcon, roles: ['SUPER_ADMIN'] },
   { href: '/admin/users', label: '프리랜서 정보 관리', icon: UsersIcon, roles: ['SUPER_ADMIN', 'APPROVER'] },
   { href: '/admin/departures', label: '퇴사자 관리', icon: UserMinusIcon, roles: ['SUPER_ADMIN'] },
+  { href: '/admin/history', label: '변경 이력', icon: HistoryIcon, roles: ['SUPER_ADMIN'] },
 ]
 
 // 로그인/회원가입 화면은 비인증 화면 전용 카드 레이아웃(Task 13.6)을 그대로 써야 하므로,
