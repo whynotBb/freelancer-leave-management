@@ -43,6 +43,13 @@
       "when": 1787889333100,
       "tag": "0005_account-events",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787903405548,
+      "tag": "0006_password-reset",
+      "breakpoints": true
     }
   ]
 }

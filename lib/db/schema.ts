@@ -12,6 +12,8 @@ export const users = pgTable('users', {
   defaultApproverId: integer('default_approver_id'),
   resignedAt: timestamp('resigned_at'),
   resignReason: text('resign_reason'),
+  mustChangePassword: boolean('must_change_password').notNull().default(false),
+  passwordChangedAt: timestamp('password_changed_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
