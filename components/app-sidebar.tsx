@@ -74,7 +74,7 @@ const ADMIN_LINKS = [
 // 로그인/회원가입 화면은 비인증 화면 전용 카드 레이아웃(Task 13.6)을 그대로 써야 하므로,
 // 세션이 남아있는 상태로 이 경로에 진입해도(뒤로가기, 남은 세션의 탭 재방문 등) 사이드바
 // 셸을 절대 씌우지 않는다 — 세션 유무가 아니라 경로 자체로 판단한다.
-const NO_CHROME_ROUTES = ['/login', '/signup']
+const NO_CHROME_ROUTES = ['/login', '/signup', '/change-password']
 
 const ALL_LINKS = [...COMMON_LINKS, ...ADMIN_LINKS]
 

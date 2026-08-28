@@ -8,12 +8,20 @@ import { auth } from '@/lib/auth'
 // '/api/cron'도 세션 쿠키가 없는 Vercel Cron 호출이 사용하므로 공개 경로로 등록한다.
 // 인증은 라우트 내부에서 Authorization: Bearer $CRON_SECRET 헤더로 별도 검증한다.
 const PUBLIC_PATHS = ['/login', '/signup', '/api/signup', '/api/cron']
+const CHANGE_PASSWORD_PATH = '/change-password'
 
 export default auth((req) => {
   const isPublic = PUBLIC_PATHS.some((path) => req.nextUrl.pathname.startsWith(path))
   if (!req.auth && !isPublic) {
     const loginUrl = new URL('/login', req.nextUrl.origin)
     return Response.redirect(loginUrl)
+  }
+
+  // 관리자가 비밀번호를 초기화하면 세션에 mustChangePassword=true가 실려 온다 — 새
+  // 비밀번호를 설정하기 전까지는 이 화면 외 다른 곳으로 못 가게 막는다.
+  const mustChangePassword = (req.auth?.user as { mustChangePassword?: boolean } | undefined)?.mustChangePassword
+  if (req.auth && mustChangePassword && !req.nextUrl.pathname.startsWith(CHANGE_PASSWORD_PATH)) {
+    return Response.redirect(new URL(CHANGE_PASSWORD_PATH, req.nextUrl.origin))
   }
 })
 
