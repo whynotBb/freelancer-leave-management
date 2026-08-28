@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isValidPassword, PASSWORD_REQUIREMENTS } from './password-policy'
+import { generateTempPassword, isValidPassword, PASSWORD_REQUIREMENTS } from './password-policy'
 
 describe('isValidPassword', () => {
   it('8자 미만이면 거부한다', () => {
@@ -40,5 +40,30 @@ describe('PASSWORD_REQUIREMENTS', () => {
       const allMet = PASSWORD_REQUIREMENTS.every((req) => req.test(password))
       expect(allMet).toBe(isValidPassword(password))
     }
+  })
+})
+
+describe('generateTempPassword', () => {
+  it('항상 기존 비밀번호 정책(isValidPassword)을 통과한다', () => {
+    for (let i = 0; i < 200; i++) {
+      expect(isValidPassword(generateTempPassword())).toBe(true)
+    }
+  })
+
+  it('길이가 항상 12자다', () => {
+    for (let i = 0; i < 50; i++) {
+      expect(generateTempPassword()).toHaveLength(12)
+    }
+  })
+
+  it('혼동되기 쉬운 문자(0, O, 1, l, I)를 포함하지 않는다', () => {
+    for (let i = 0; i < 200; i++) {
+      expect(generateTempPassword()).not.toMatch(/[0O1lI]/)
+    }
+  })
+
+  it('호출할 때마다 다른 값을 생성한다(완전히 결정적이지 않음)', () => {
+    const results = new Set(Array.from({ length: 20 }, () => generateTempPassword()))
+    expect(results.size).toBeGreaterThan(1)
   })
 })
