@@ -7,6 +7,8 @@ export interface GrantHistoryRow {
   createdBy: number | null
   createdByName: string | null
   createdAt: string
+  targetUserId?: number
+  targetUserName?: string
 }
 
 export interface UsageHistoryRow {
@@ -16,6 +18,8 @@ export interface UsageHistoryRow {
   type: string
   approverName: string | null
   createdAt: string
+  targetUserId?: number
+  targetUserName?: string
 }
 
 export interface ApproverChangeHistoryRow {
@@ -24,6 +28,8 @@ export interface ApproverChangeHistoryRow {
   afterApproverName: string
   reason: string
   changedByName: string
+  targetUserId?: number
+  targetUserName?: string
 }
 
 export interface AttendanceExceptionHistoryRow {
@@ -31,14 +37,38 @@ export interface AttendanceExceptionHistoryRow {
   reason: string
   createdByName: string | null
   createdAt: string
+  targetUserId?: number
+  targetUserName?: string
+}
+
+export interface AccountEventHistoryRow {
+  action: 'SIGNUP_APPROVED' | 'SIGNUP_REJECTED' | 'RESIGNED'
+  role: 'FREELANCER' | 'APPROVER' | null
+  hireDate: string | null
+  reason: string | null
+  actorName: string | null
+  createdAt: string
+  targetUserId?: number
+  targetUserName?: string
 }
 
 export interface HistoryEntry {
-  category: '연차 자동 발생' | '연차 조정' | '사용' | '결재자 변경' | '입사일 변경' | '만근 예외'
+  category:
+    | '연차 자동 발생'
+    | '연차 조정'
+    | '사용'
+    | '결재자 변경'
+    | '입사일 변경'
+    | '만근 예외'
+    | '가입 승인'
+    | '가입 거절'
+    | '퇴사'
   date: string
   detail: string
   reason: string
   actorName: string | null
+  targetUserId?: number
+  targetUserName?: string
 }
 
 interface SortableEntry {
@@ -66,6 +96,7 @@ export function buildHistoryTimeline(params: {
   usages: UsageHistoryRow[]
   approverChanges: ApproverChangeHistoryRow[]
   exceptions?: AttendanceExceptionHistoryRow[]
+  accountEvents?: AccountEventHistoryRow[]
 }): HistoryEntry[] {
   const grantEntries: SortableEntry[] = params.grants.map((g) => {
     const isAutoGrant = g.createdBy === null
@@ -78,6 +109,8 @@ export function buildHistoryTimeline(params: {
         reason: g.note ?? '-',
         // 자동 발생 배치는 createdBy를 남기지 않으므로(사람이 아닌 시스템 처리) 처리자를 "시스템"으로 표시한다.
         actorName: isAutoGrant ? '시스템' : g.createdByName,
+        targetUserId: g.targetUserId,
+        targetUserName: g.targetUserName,
       },
       sortKey: g.createdAt,
     }
@@ -90,6 +123,8 @@ export function buildHistoryTimeline(params: {
       detail: formatAmount(u.requestedDays),
       reason: u.reason,
       actorName: u.approverName,
+      targetUserId: u.targetUserId,
+      targetUserName: u.targetUserName,
     },
     sortKey: u.createdAt,
   }))
@@ -101,6 +136,8 @@ export function buildHistoryTimeline(params: {
       detail: `${c.beforeApproverName ?? '미지정'} → ${c.afterApproverName}`,
       reason: c.reason,
       actorName: c.changedByName,
+      targetUserId: c.targetUserId,
+      targetUserName: c.targetUserName,
     },
     sortKey: c.createdAt,
   }))
@@ -112,11 +149,68 @@ export function buildHistoryTimeline(params: {
       detail: `${ex.periodStart} ~ ${addMonthsISO(ex.periodStart, 1)} 미발생`,
       reason: ex.reason,
       actorName: ex.createdByName,
+      targetUserId: ex.targetUserId,
+      targetUserName: ex.targetUserName,
     },
     sortKey: ex.createdAt,
   }))
 
-  return [...grantEntries, ...usageEntries, ...approverChangeEntries, ...exceptionEntries]
+  const accountEventEntries: SortableEntry[] = (params.accountEvents ?? []).map((a) => {
+    const category: HistoryEntry['category'] =
+      a.action === 'SIGNUP_APPROVED' ? '가입 승인' : a.action === 'SIGNUP_REJECTED' ? '가입 거절' : '퇴사'
+    const detail =
+      a.action === 'SIGNUP_APPROVED'
+        ? a.role === 'FREELANCER'
+          ? `프리랜서 승인 (입사일 ${a.hireDate})`
+          : '결재자 승인'
+        : '-'
+    return {
+      entry: {
+        category,
+        date: formatDateTime(a.createdAt),
+        detail,
+        reason: a.reason ?? '-',
+        actorName: a.actorName,
+        targetUserId: a.targetUserId,
+        targetUserName: a.targetUserName,
+      },
+      sortKey: a.createdAt,
+    }
+  })
+
+  return [
+    ...grantEntries,
+    ...usageEntries,
+    ...approverChangeEntries,
+    ...exceptionEntries,
+    ...accountEventEntries,
+  ]
     .sort((a, b) => (a.sortKey < b.sortKey ? 1 : a.sortKey > b.sortKey ? -1 : 0))
     .map((s) => s.entry)
+}
+
+export interface HistoryFilters {
+  category?: HistoryEntry['category']
+  page: number
+  pageSize: number
+}
+
+export interface HistoryPage {
+  items: HistoryEntry[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+// 정렬·병합이 끝난 타임라인 위에서 카테고리 필터링과 페이지 슬라이스만 담당하는 순수 함수.
+// DB 조회(lib/db/history.ts)는 이 함수를 호출하기 전에 이미 병합·정렬된 배열을 넘긴다.
+export function paginateHistory(entries: HistoryEntry[], filters: HistoryFilters): HistoryPage {
+  const filtered = filters.category ? entries.filter((e) => e.category === filters.category) : entries
+  const start = (filters.page - 1) * filters.pageSize
+  return {
+    items: filtered.slice(start, start + filters.pageSize),
+    total: filtered.length,
+    page: filters.page,
+    pageSize: filters.pageSize,
+  }
 }

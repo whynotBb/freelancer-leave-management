@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildHistoryTimeline } from './user-history'
+import { buildHistoryTimeline, paginateHistory, type HistoryEntry } from './user-history'
 
 describe('buildHistoryTimeline', () => {
   it('createdBy가 없는 leaveGrants 행은 "연차 자동 발생"으로 분류하고 양수 금액에 +를 붙이며 처리자를 "시스템"으로 표시한다', () => {
@@ -247,5 +247,151 @@ describe('buildHistoryTimeline', () => {
   it('exceptions를 생략해도 기존 호출부와 동일하게 동작한다', () => {
     const result = buildHistoryTimeline({ grants: [], usages: [], approverChanges: [] })
     expect(result).toEqual([])
+  })
+
+  it('SIGNUP_APPROVED(FREELANCER) 행은 "가입 승인"으로 분류하고 detail에 입사일을 포함한다', () => {
+    const result = buildHistoryTimeline({
+      grants: [],
+      usages: [],
+      approverChanges: [],
+      accountEvents: [
+        {
+          action: 'SIGNUP_APPROVED',
+          role: 'FREELANCER',
+          hireDate: '2026-08-28',
+          reason: null,
+          actorName: '관리자',
+          createdAt: '2026-08-28T00:30:00.000Z',
+        },
+      ],
+    })
+    expect(result).toEqual([
+      {
+        category: '가입 승인',
+        date: '2026-08-28 09:30',
+        detail: '프리랜서 승인 (입사일 2026-08-28)',
+        reason: '-',
+        actorName: '관리자',
+        targetUserId: undefined,
+        targetUserName: undefined,
+      },
+    ])
+  })
+
+  it('SIGNUP_APPROVED(APPROVER) 행은 detail이 "결재자 승인"이다', () => {
+    const result = buildHistoryTimeline({
+      grants: [],
+      usages: [],
+      approverChanges: [],
+      accountEvents: [
+        {
+          action: 'SIGNUP_APPROVED',
+          role: 'APPROVER',
+          hireDate: null,
+          reason: null,
+          actorName: '관리자',
+          createdAt: '2026-08-28T00:30:00.000Z',
+        },
+      ],
+    })
+    expect(result[0].category).toBe('가입 승인')
+    expect(result[0].detail).toBe('결재자 승인')
+  })
+
+  it('SIGNUP_REJECTED 행은 "가입 거절"로 분류하고 detail은 "-"이다', () => {
+    const result = buildHistoryTimeline({
+      grants: [],
+      usages: [],
+      approverChanges: [],
+      accountEvents: [
+        {
+          action: 'SIGNUP_REJECTED',
+          role: null,
+          hireDate: null,
+          reason: null,
+          actorName: '관리자',
+          createdAt: '2026-08-28T01:00:00.000Z',
+        },
+      ],
+    })
+    expect(result[0]).toEqual({
+      category: '가입 거절',
+      date: '2026-08-28 10:00',
+      detail: '-',
+      reason: '-',
+      actorName: '관리자',
+      targetUserId: undefined,
+      targetUserName: undefined,
+    })
+  })
+
+  it('RESIGNED 행은 "퇴사"로 분류하고 reason에 퇴사 사유 스냅샷이 그대로 담긴다', () => {
+    const result = buildHistoryTimeline({
+      grants: [],
+      usages: [],
+      approverChanges: [],
+      accountEvents: [
+        {
+          action: 'RESIGNED',
+          role: null,
+          hireDate: null,
+          reason: '계약 종료',
+          actorName: '관리자',
+          createdAt: '2026-08-28T02:00:00.000Z',
+        },
+      ],
+    })
+    expect(result[0].category).toBe('퇴사')
+    expect(result[0].reason).toBe('계약 종료')
+  })
+
+  it('targetUserId/targetUserName이 있으면 결과에 그대로 포함된다', () => {
+    const result = buildHistoryTimeline({
+      grants: [
+        {
+          grantDate: '2026-04-01',
+          amount: 1,
+          note: null,
+          createdBy: null,
+          createdByName: null,
+          createdAt: '2026-04-01T00:00:00.000Z',
+          targetUserId: 7,
+          targetUserName: '김프리랜서',
+        },
+      ],
+      usages: [],
+      approverChanges: [],
+    })
+    expect(result[0].targetUserId).toBe(7)
+    expect(result[0].targetUserName).toBe('김프리랜서')
+  })
+})
+
+describe('paginateHistory', () => {
+  const entries: HistoryEntry[] = Array.from({ length: 5 }, (_, i) => ({
+    category: i % 2 === 0 ? '연차 조정' : '만근 예외',
+    date: `2026-08-0${i + 1} 09:00`,
+    detail: `detail-${i}`,
+    reason: '-',
+    actorName: null,
+  }))
+
+  it('category 필터가 있으면 해당 카테고리만 남긴다', () => {
+    const result = paginateHistory(entries, { category: '만근 예외', page: 1, pageSize: 10 })
+    expect(result.total).toBe(2)
+    expect(result.items.every((e) => e.category === '만근 예외')).toBe(true)
+  })
+
+  it('pageSize만큼 슬라이스하고 total은 필터링된 전체 개수를 반환한다', () => {
+    const result = paginateHistory(entries, { page: 1, pageSize: 2 })
+    expect(result.total).toBe(5)
+    expect(result.items).toHaveLength(2)
+    expect(result.page).toBe(1)
+    expect(result.pageSize).toBe(2)
+  })
+
+  it('page 2는 다음 슬라이스를 반환한다', () => {
+    const result = paginateHistory(entries, { page: 2, pageSize: 2 })
+    expect(result.items.map((e) => e.detail)).toEqual(['detail-2', 'detail-3'])
   })
 })
