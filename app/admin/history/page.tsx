@@ -28,6 +28,7 @@ type Category =
   | '가입 승인'
   | '가입 거절'
   | '퇴사'
+  | '비밀번호 초기화'
   | '연차 자동 발생'
   | '연차 조정'
   | '입사일 변경'
@@ -58,6 +59,7 @@ const CATEGORY_OPTIONS: Category[] = [
   '가입 승인',
   '가입 거절',
   '퇴사',
+  '비밀번호 초기화',
   '연차 자동 발생',
   '연차 조정',
   '입사일 변경',
@@ -90,6 +92,8 @@ const CATEGORY_BADGE_CLASS: Record<Category, string> = {
   '가입 거절':
     'border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-300',
   퇴사: 'border-red-300 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300',
+  '비밀번호 초기화':
+    'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300',
 }
 
 const PAGE_SIZE = 50
@@ -142,7 +146,7 @@ export default function AdminHistoryPage() {
 
   return (
     <div className="w-full">
-      <PageHeader title="변경 이력" description="가입 승인/거절, 퇴사, 연차, 결재자, 만근 예외 변경 이력을 조회합니다." />
+      <PageHeader title="변경 이력" description="가입 승인/거절, 퇴사, 비밀번호 초기화, 연차, 결재자, 만근 예외 변경 이력을 조회합니다." />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Select

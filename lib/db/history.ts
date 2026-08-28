@@ -168,7 +168,7 @@ export async function getSiteWideHistory(filters: SiteWideHistoryFilters): Promi
     exceptions: exceptionRows.map((ex) => ({ ...ex, createdAt: ex.createdAt.toISOString() })),
     accountEvents: accountEventRows.map((a) => ({
       ...a,
-      action: a.action as 'SIGNUP_APPROVED' | 'SIGNUP_REJECTED' | 'RESIGNED',
+      action: a.action as 'SIGNUP_APPROVED' | 'SIGNUP_REJECTED' | 'RESIGNED' | 'PASSWORD_RESET',
       role: a.role as 'FREELANCER' | 'APPROVER' | null,
       createdAt: a.createdAt.toISOString(),
       actorName: a.actorName ?? '-',

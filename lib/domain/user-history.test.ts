@@ -365,6 +365,33 @@ describe('buildHistoryTimeline', () => {
     expect(result[0].targetUserId).toBe(7)
     expect(result[0].targetUserName).toBe('김프리랜서')
   })
+
+  it('PASSWORD_RESET 행은 "비밀번호 초기화"로 분류하고 detail은 "-"이다', () => {
+    const result = buildHistoryTimeline({
+      grants: [],
+      usages: [],
+      approverChanges: [],
+      accountEvents: [
+        {
+          action: 'PASSWORD_RESET',
+          role: null,
+          hireDate: null,
+          reason: null,
+          actorName: '관리자',
+          createdAt: '2026-08-28T03:00:00.000Z',
+        },
+      ],
+    })
+    expect(result[0]).toEqual({
+      category: '비밀번호 초기화',
+      date: '2026-08-28 12:00',
+      detail: '-',
+      reason: '-',
+      actorName: '관리자',
+      targetUserId: undefined,
+      targetUserName: undefined,
+    })
+  })
 })
 
 describe('paginateHistory', () => {

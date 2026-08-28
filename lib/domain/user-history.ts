@@ -42,7 +42,7 @@ export interface AttendanceExceptionHistoryRow {
 }
 
 export interface AccountEventHistoryRow {
-  action: 'SIGNUP_APPROVED' | 'SIGNUP_REJECTED' | 'RESIGNED'
+  action: 'SIGNUP_APPROVED' | 'SIGNUP_REJECTED' | 'RESIGNED' | 'PASSWORD_RESET'
   role: 'FREELANCER' | 'APPROVER' | null
   hireDate: string | null
   reason: string | null
@@ -63,6 +63,7 @@ export interface HistoryEntry {
     | '가입 승인'
     | '가입 거절'
     | '퇴사'
+    | '비밀번호 초기화'
   date: string
   detail: string
   reason: string
@@ -74,6 +75,13 @@ export interface HistoryEntry {
 interface SortableEntry {
   entry: HistoryEntry
   sortKey: string
+}
+
+const ACCOUNT_EVENT_CATEGORY: Record<AccountEventHistoryRow['action'], HistoryEntry['category']> = {
+  SIGNUP_APPROVED: '가입 승인',
+  SIGNUP_REJECTED: '가입 거절',
+  RESIGNED: '퇴사',
+  PASSWORD_RESET: '비밀번호 초기화',
 }
 
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000
@@ -156,8 +164,7 @@ export function buildHistoryTimeline(params: {
   }))
 
   const accountEventEntries: SortableEntry[] = (params.accountEvents ?? []).map((a) => {
-    const category: HistoryEntry['category'] =
-      a.action === 'SIGNUP_APPROVED' ? '가입 승인' : a.action === 'SIGNUP_REJECTED' ? '가입 거절' : '퇴사'
+    const category = ACCOUNT_EVENT_CATEGORY[a.action]
     const detail =
       a.action === 'SIGNUP_APPROVED'
         ? a.role === 'FREELANCER'
