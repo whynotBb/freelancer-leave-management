@@ -4,11 +4,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { SearchIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DatePicker } from '@/components/date-picker'
 import { Input } from '@/components/ui/input'
 import { LoadingSpinner } from '@/components/loading-spinner'
 import { PageHeader } from '@/components/page-header'
 import { ResignDialog } from '@/components/resign-dialog'
+import { TempPasswordDialog } from '@/components/temp-password-dialog'
 import {
   Select,
   SelectContent,
@@ -75,6 +77,10 @@ export default function AdminUsersManagePage() {
   const [rowErrors, setRowErrors] = useState<Record<number, string>>({})
   const [decidingId, setDecidingId] = useState<number | null>(null)
   const [resignTarget, setResignTarget] = useState<{ id: number; name: string } | null>(null)
+  const [resetTarget, setResetTarget] = useState<{ id: number; name: string } | null>(null)
+  const [resetSubmitting, setResetSubmitting] = useState(false)
+  const [resetError, setResetError] = useState<string | null>(null)
+  const [tempPasswordResult, setTempPasswordResult] = useState<{ name: string; tempPassword: string } | null>(null)
   const [search, setSearch] = useState('')
 
   function load() {
@@ -133,6 +139,27 @@ export default function AdminUsersManagePage() {
     }
   }
 
+  async function confirmResetPassword() {
+    if (!resetTarget) return
+    setResetSubmitting(true)
+    try {
+      const res = await fetch(`/api/admin/users-manage/${resetTarget.id}/reset-password`, {
+        method: 'PATCH',
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        setResetError(body?.error ?? '처리에 실패했습니다.')
+        return
+      }
+      const data = await res.json()
+      setTempPasswordResult({ name: resetTarget.name, tempPassword: data.tempPassword })
+      setResetTarget(null)
+      setResetError(null)
+    } finally {
+      setResetSubmitting(false)
+    }
+  }
+
   function renderPendingFields(user: ManagedUser, layout: 'row' | 'stack') {
     const role = getPendingRole(user.id)
     const wrapClass = layout === 'row' ? 'flex items-center gap-2' : 'space-y-1'
@@ -188,7 +215,11 @@ export default function AdminUsersManagePage() {
     }
     return (
       <div className={wrapClass}>
-        <Button className={btnClass} variant="outline" disabled>
+        <Button
+          className={btnClass}
+          variant="outline"
+          onClick={() => setResetTarget({ id: user.id, name: user.name })}
+        >
           비밀번호 초기화
         </Button>
         {user.role !== 'SUPER_ADMIN' && (
@@ -323,6 +354,29 @@ export default function AdminUsersManagePage() {
         onOpenChange={(open) => !open && setResignTarget(null)}
         userId={resignTarget?.id ?? null}
         userName={resignTarget?.name ?? ''}
+      />
+
+      <ConfirmDialog
+        open={resetTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setResetTarget(null)
+            setResetError(null)
+          }
+        }}
+        title="비밀번호를 초기화하시겠습니까?"
+        description="임시 비밀번호가 새로 발급되며 기존 비밀번호는 더 이상 사용할 수 없습니다."
+        confirmLabel="초기화"
+        onConfirm={confirmResetPassword}
+        submitting={resetSubmitting}
+        error={resetError}
+      />
+
+      <TempPasswordDialog
+        open={tempPasswordResult !== null}
+        onOpenChange={(open) => !open && setTempPasswordResult(null)}
+        userName={tempPasswordResult?.name ?? ''}
+        tempPassword={tempPasswordResult?.tempPassword ?? ''}
       />
     </div>
   )
