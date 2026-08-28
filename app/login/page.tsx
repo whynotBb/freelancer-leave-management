@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { AuthLayout } from '@/components/auth-layout'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const passwordChanged = searchParams.get('passwordChanged') === '1'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -35,6 +37,11 @@ export default function LoginPage() {
         <h1 className="text-2xl font-semibold">로그인</h1>
         <p className="text-sm text-muted-foreground">이메일과 비밀번호를 입력해주세요</p>
       </div>
+      {passwordChanged && (
+        <p className="mt-4 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+          비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.
+        </p>
+      )}
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email">이메일</Label>
