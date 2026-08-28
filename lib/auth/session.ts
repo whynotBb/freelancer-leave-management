@@ -24,6 +24,22 @@ export async function requireApprovedUser() {
   }
   const userId = Number((session.user as { id?: string }).id)
 
+  // 비밀번호가 이 세션이 발급된 뒤에 바뀌었으면(관리자 초기화 포함) 그 세션은 더 이상
+  // 유효하지 않다. 가입상태 확인(아래)과 달리 캐시하지 않고 매 요청 확인한다 — 비밀번호
+  // 초기화는 보안 민감도가 더 높아 지연을 두지 않기로 했다(스펙 6.2절).
+  const tokenIssuedAt = (session.user as { iat?: number }).iat
+  const [passwordRow] = await db
+    .select({ passwordChangedAt: users.passwordChangedAt })
+    .from(users)
+    .where(eq(users.id, userId))
+  if (
+    passwordRow?.passwordChangedAt &&
+    tokenIssuedAt !== undefined &&
+    passwordRow.passwordChangedAt.getTime() > tokenIssuedAt * 1000
+  ) {
+    throw new UnauthorizedError('비밀번호가 변경되어 다시 로그인해야 합니다.')
+  }
+
   const cached = statusCache.get(userId)
   const now = Date.now()
   if (cached && now - cached.checkedAt < STATUS_CHECK_INTERVAL_MS) {
