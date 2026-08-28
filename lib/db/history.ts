@@ -1,4 +1,4 @@
-import { and, eq, gte, lte } from 'drizzle-orm'
+import { and, eq, gte, ilike, lte } from 'drizzle-orm'
 import { alias, type PgColumn } from 'drizzle-orm/pg-core'
 import { db } from '@/lib/db/client'
 import {
@@ -16,6 +16,7 @@ export interface SiteWideHistoryFilters {
   category?: HistoryEntry['category']
   from?: string
   to?: string
+  targetName?: string
   page: number
   pageSize: number
 }
@@ -26,6 +27,20 @@ function dateRangeConditions(column: PgColumn, from?: string, to?: string) {
   if (from) conditions.push(gte(column, new Date(`${from}T00:00:00+09:00`)))
   if (to) conditions.push(lte(column, new Date(`${to}T23:59:59+09:00`)))
   return conditions
+}
+
+function targetNameCondition(nameColumn: PgColumn, targetName?: string) {
+  return targetName ? [ilike(nameColumn, `%${targetName}%`)] : []
+}
+
+// 날짜 범위 + 대상 이름 조건을 합쳐 하나의 where 절로 만든다. 둘 다 없으면 undefined를
+// 반환해(drizzle의 동적 쿼리 패턴) 필터링 없이 전체를 조회한다.
+function whereConditions(dateColumn: PgColumn, targetNameColumn: PgColumn, filters: SiteWideHistoryFilters) {
+  const conditions = [
+    ...dateRangeConditions(dateColumn, filters.from, filters.to),
+    ...targetNameCondition(targetNameColumn, filters.targetName),
+  ]
+  return conditions.length > 0 ? and(...conditions) : undefined
 }
 
 export async function getSiteWideHistory(filters: SiteWideHistoryFilters): Promise<HistoryPage> {
@@ -51,12 +66,7 @@ export async function getSiteWideHistory(filters: SiteWideHistoryFilters): Promi
         .from(leaveGrants)
         .leftJoin(grantCreator, eq(leaveGrants.createdBy, grantCreator.id))
         .innerJoin(grantTarget, eq(leaveGrants.userId, grantTarget.id))
-        .where(
-          (() => {
-            const c = dateRangeConditions(leaveGrants.createdAt, filters.from, filters.to)
-            return c.length > 0 ? and(...c) : undefined
-          })()
-        )
+        .where(whereConditions(leaveGrants.createdAt, grantTarget.name, filters))
     : []
 
   const usageApprover = alias(users, 'usageApprover')
@@ -79,7 +89,8 @@ export async function getSiteWideHistory(filters: SiteWideHistoryFilters): Promi
         .where(
           and(
             eq(leaveRequests.status, 'APPROVED'),
-            ...dateRangeConditions(leaveRequests.createdAt, filters.from, filters.to)
+            ...dateRangeConditions(leaveRequests.createdAt, filters.from, filters.to),
+            ...targetNameCondition(usageTarget.name, filters.targetName)
           )
         )
     : []
@@ -104,12 +115,7 @@ export async function getSiteWideHistory(filters: SiteWideHistoryFilters): Promi
         .leftJoin(afterApprover, eq(approverChanges.afterApproverId, afterApprover.id))
         .leftJoin(changer, eq(approverChanges.changedBy, changer.id))
         .innerJoin(approverTarget, eq(approverChanges.userId, approverTarget.id))
-        .where(
-          (() => {
-            const c = dateRangeConditions(approverChanges.createdAt, filters.from, filters.to)
-            return c.length > 0 ? and(...c) : undefined
-          })()
-        )
+        .where(whereConditions(approverChanges.createdAt, approverTarget.name, filters))
     : []
 
   const exceptionCreator = alias(users, 'exceptionCreator')
@@ -127,12 +133,7 @@ export async function getSiteWideHistory(filters: SiteWideHistoryFilters): Promi
         .from(attendanceExceptions)
         .leftJoin(exceptionCreator, eq(attendanceExceptions.createdBy, exceptionCreator.id))
         .innerJoin(exceptionTarget, eq(attendanceExceptions.userId, exceptionTarget.id))
-        .where(
-          (() => {
-            const c = dateRangeConditions(attendanceExceptions.createdAt, filters.from, filters.to)
-            return c.length > 0 ? and(...c) : undefined
-          })()
-        )
+        .where(whereConditions(attendanceExceptions.createdAt, exceptionTarget.name, filters))
     : []
 
   const eventActor = alias(users, 'eventActor')
@@ -152,12 +153,7 @@ export async function getSiteWideHistory(filters: SiteWideHistoryFilters): Promi
         .from(accountEvents)
         .leftJoin(eventActor, eq(accountEvents.actorId, eventActor.id))
         .innerJoin(eventTarget, eq(accountEvents.userId, eventTarget.id))
-        .where(
-          (() => {
-            const c = dateRangeConditions(accountEvents.createdAt, filters.from, filters.to)
-            return c.length > 0 ? and(...c) : undefined
-          })()
-        )
+        .where(whereConditions(accountEvents.createdAt, eventTarget.name, filters))
     : []
 
   const timeline = buildHistoryTimeline({

@@ -19,10 +19,11 @@ export async function GET(request: Request) {
     const category = (url.searchParams.get('category') as HistoryEntry['category'] | null) ?? undefined
     const from = url.searchParams.get('from') ?? undefined
     const to = url.searchParams.get('to') ?? undefined
+    const targetName = url.searchParams.get('targetName') || undefined
     const page = Math.max(1, Number(url.searchParams.get('page') ?? '1') || 1)
     const pageSize = Math.min(100, Math.max(1, Number(url.searchParams.get('pageSize') ?? '50') || 50))
 
-    const result = await getSiteWideHistory({ targetGroup, category, from, to, page, pageSize })
+    const result = await getSiteWideHistory({ targetGroup, category, from, to, targetName, page, pageSize })
     return NextResponse.json(result)
   } catch (error) {
     const response = toAuthErrorResponse(error)

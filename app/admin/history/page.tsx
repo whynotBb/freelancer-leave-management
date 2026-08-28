@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { RotateCcwIcon, SearchIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { DatePicker } from '@/components/date-picker'
+import { DateRangePicker } from '@/components/date-range-picker'
+import { Input } from '@/components/ui/input'
 import { LoadingSpinner } from '@/components/loading-spinner'
 import { PageHeader } from '@/components/page-header'
 import {
@@ -98,6 +100,7 @@ export default function AdminHistoryPage() {
   const [targetGroup, setTargetGroup] = useState<TargetGroup | 'ALL'>('ALL')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
+  const [targetName, setTargetName] = useState('')
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -111,6 +114,7 @@ export default function AdminHistoryPage() {
     if (targetGroup !== 'ALL') params.set('targetGroup', targetGroup)
     if (from) params.set('from', from)
     if (to) params.set('to', to)
+    if (targetName) params.set('targetName', targetName)
     params.set('page', String(page))
     params.set('pageSize', String(PAGE_SIZE))
 
@@ -122,9 +126,19 @@ export default function AdminHistoryPage() {
       .then(setData)
       .catch(() => setLoadError('목록을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.'))
       .finally(() => setLoading(false))
-  }, [category, targetGroup, from, to, page])
+  }, [category, targetGroup, from, to, targetName, page])
 
   const totalPages = Math.max(1, Math.ceil(data.total / PAGE_SIZE))
+  const hasActiveFilters = category !== 'ALL' || targetGroup !== 'ALL' || !!from || !!to || !!targetName
+
+  function resetFilters() {
+    setPage(1)
+    setCategory('ALL')
+    setTargetGroup('ALL')
+    setFrom('')
+    setTo('')
+    setTargetName('')
+  }
 
   return (
     <div className="w-full">
@@ -171,24 +185,34 @@ export default function AdminHistoryPage() {
           </SelectContent>
         </Select>
 
-        <DatePicker
-          value={from || undefined}
-          onChange={(value) => {
+        <DateRangePicker
+          value={{ from: from || undefined, to: to || undefined }}
+          onChange={(range) => {
             setPage(1)
-            setFrom(value)
+            setFrom(range.from ?? '')
+            setTo(range.to ?? '')
           }}
-          placeholder="시작일"
-          className="w-40"
+          placeholder="기간 선택"
+          className="w-56"
         />
-        <DatePicker
-          value={to || undefined}
-          onChange={(value) => {
-            setPage(1)
-            setTo(value)
-          }}
-          placeholder="종료일"
-          className="w-40"
-        />
+
+        <div className="relative">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="대상 이름 검색"
+            value={targetName}
+            onChange={(e) => {
+              setPage(1)
+              setTargetName(e.target.value)
+            }}
+            className="w-48 pl-8"
+          />
+        </div>
+
+        <Button variant="outline" disabled={!hasActiveFilters} onClick={resetFilters}>
+          <RotateCcwIcon className="size-4" />
+          초기화
+        </Button>
       </div>
 
       {loading ? (
