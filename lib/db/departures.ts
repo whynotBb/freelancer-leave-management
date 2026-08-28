@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { randomUUID } from 'node:crypto'
 import { db } from '@/lib/db/client'
 import {
+  accountEvents,
   approverChanges,
   attendanceExceptions,
   leaveGrants,
@@ -15,6 +16,7 @@ export async function resignUser(params: {
   userId: number
   reason: string
   delegateTo?: number
+  actorId: number
 }): Promise<
   | { ok: true }
   | { error: 'NOT_FOUND' }
@@ -40,8 +42,8 @@ export async function resignUser(params: {
     }
 
     if (pending.length > 0 && params.delegateTo) {
-      // 위임 재배정 + 알림 발송 + 퇴사 처리를 하나의 트랜잭션으로 묶어(스펙 5.1) 중간에
-      // 실패해도 일부만 반영되지 않도록 한다.
+      // 위임 재배정 + 알림 발송 + 퇴사 처리 + 이력 기록을 하나의 트랜잭션으로 묶어(스펙
+      // 5.1절) 중간에 실패해도 일부만 반영되지 않도록 한다.
       const delegateTo = params.delegateTo
       await db.transaction(async (tx) => {
         await tx
@@ -62,6 +64,13 @@ export async function resignUser(params: {
           .update(users)
           .set({ signupStatus: 'RESIGNED', resignedAt: new Date(), resignReason: params.reason })
           .where(eq(users.id, params.userId))
+
+        await tx.insert(accountEvents).values({
+          userId: params.userId,
+          actorId: params.actorId,
+          action: 'RESIGNED',
+          reason: params.reason,
+        })
       })
 
       return { ok: true }
@@ -72,6 +81,13 @@ export async function resignUser(params: {
     .update(users)
     .set({ signupStatus: 'RESIGNED', resignedAt: new Date(), resignReason: params.reason })
     .where(eq(users.id, params.userId))
+
+  await db.insert(accountEvents).values({
+    userId: params.userId,
+    actorId: params.actorId,
+    action: 'RESIGNED',
+    reason: params.reason,
+  })
 
   return { ok: true }
 }
@@ -124,7 +140,7 @@ export async function deleteDepartedUser(userId: number): Promise<{ ok: true } |
   }
 
   if (target.role === 'FREELANCER') {
-    // 되돌릴 수 없는 완전 삭제이므로 여섯 개의 삭제 문을 하나의 트랜잭션으로 묶어
+    // 되돌릴 수 없는 완전 삭제이므로 일곱 개의 삭제 문을 하나의 트랜잭션으로 묶어
     // 중간에 실패해도 일부 테이블만 삭제된 상태로 남지 않도록 한다.
     await db.transaction(async (tx) => {
       await tx.delete(leaveGrants).where(eq(leaveGrants.userId, userId))
@@ -132,6 +148,7 @@ export async function deleteDepartedUser(userId: number): Promise<{ ok: true } |
       await tx.delete(notifications).where(eq(notifications.recipientId, userId))
       await tx.delete(approverChanges).where(eq(approverChanges.userId, userId))
       await tx.delete(attendanceExceptions).where(eq(attendanceExceptions.userId, userId))
+      await tx.delete(accountEvents).where(eq(accountEvents.userId, userId))
       await tx.delete(users).where(eq(users.id, userId))
     })
     return { ok: true }

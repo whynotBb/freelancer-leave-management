@@ -29,6 +29,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       userId: Number(id),
       reason: parsed.data.reason,
       delegateTo: parsed.data.delegate ? callerId : undefined,
+      actorId: callerId,
     })
 
     if ('error' in result) {
