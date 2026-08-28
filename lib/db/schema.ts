@@ -91,3 +91,14 @@ export const attendanceExceptions = pgTable(
   },
   (t) => [uniqueIndex('attendance_exceptions_user_period_unique').on(t.userId, t.periodStart)]
 )
+
+export const accountEvents = pgTable('account_events', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  actorId: integer('actor_id').notNull().references(() => users.id),
+  action: varchar('action', { length: 20 }).notNull(),
+  role: varchar('role', { length: 20 }),
+  hireDate: date('hire_date', { mode: 'string' }),
+  reason: text('reason'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
