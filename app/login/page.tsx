@@ -13,6 +13,7 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const passwordChanged = searchParams.get('passwordChanged') === '1'
+  const sessionExpired = searchParams.get('sessionExpired') === '1'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -40,6 +41,11 @@ export default function LoginPage() {
       {passwordChanged && (
         <p className="mt-4 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
           비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.
+        </p>
+      )}
+      {sessionExpired && (
+        <p className="mt-4 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+          비밀번호가 변경되어 로그아웃되었습니다. 다시 로그인해 주세요.
         </p>
       )}
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
