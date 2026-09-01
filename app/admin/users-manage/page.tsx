@@ -319,7 +319,7 @@ export default function AdminUsersManagePage() {
             </TableBody>
           </Table>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
+          <div className="grid grid-cols-1 gap-3 lg:hidden">
             {visible.map((user) => (
               <div key={user.id} className="space-y-3 rounded-lg border p-4">
                 <div>
