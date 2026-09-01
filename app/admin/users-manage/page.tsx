@@ -61,10 +61,8 @@ const STATUS_LABEL: Record<ManagedUser['signupStatus'], string> = {
 }
 
 const STATUS_BADGE_CLASS: Record<ManagedUser['signupStatus'], string> = {
-  PENDING:
-    'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300',
-  APPROVED:
-    'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+  PENDING: 'border-0 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+  APPROVED: 'border-0 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
 }
 
 export default function AdminUsersManagePage() {
