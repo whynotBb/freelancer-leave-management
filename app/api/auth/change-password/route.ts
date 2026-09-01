@@ -4,22 +4,18 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '@/lib/db/client'
 import { users } from '@/lib/db/schema'
-import { ForbiddenError, requireApprovedUser, toAuthErrorResponse } from '@/lib/auth/session'
+import { requireApprovedUser, toAuthErrorResponse } from '@/lib/auth/session'
 import { isValidPassword, PASSWORD_POLICY_HINT } from '@/lib/domain/password-policy'
 
 const bodySchema = z.object({
   password: z.string().refine(isValidPassword, { message: PASSWORD_POLICY_HINT }),
+  currentPassword: z.string().min(1).optional(),
 })
 
 export async function POST(request: Request) {
   try {
     const session = await requireApprovedUser()
-    // 이 엔드포인트는 관리자 강제 초기화 플로우의 종착점으로만 존재한다(스펙에서
-    // 일반적인 자기서비스 비밀번호 변경은 범위 밖으로 명시) — 강제 대상이 아닌
-    // 세션에서의 호출은 거부한다.
-    if (!(session.user as { mustChangePassword?: boolean }).mustChangePassword) {
-      throw new ForbiddenError('비밀번호 변경이 필요한 계정이 아닙니다.')
-    }
+    const mustChangePassword = (session.user as { mustChangePassword?: boolean }).mustChangePassword
     const userId = Number((session.user as { id?: string }).id)
 
     let body: unknown
@@ -30,7 +26,25 @@ export async function POST(request: Request) {
     }
     const parsed = bodySchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: PASSWORD_POLICY_HINT }, { status: 400 })
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? PASSWORD_POLICY_HINT }, { status: 400 })
+    }
+
+    const [current] = await db.select({ passwordHash: users.passwordHash }).from(users).where(eq(users.id, userId))
+    if (!current) {
+      return NextResponse.json({ error: '계정을 찾을 수 없습니다.' }, { status: 400 })
+    }
+
+    // 강제 초기화 대상(mustChangePassword=true)은 이미 임시 비밀번호로 인증된 세션이므로
+    // 현재 비밀번호를 다시 물을 필요가 없다. 그 외(본인이 자발적으로 바꾸는 경우)에는 세션
+    // 탈취만으로 비밀번호를 바꿔치기할 수 없도록 현재 비밀번호 확인을 요구한다.
+    if (!mustChangePassword) {
+      if (!parsed.data.currentPassword) {
+        return NextResponse.json({ error: '현재 비밀번호를 입력해 주세요.' }, { status: 400 })
+      }
+      const matches = await bcrypt.compare(parsed.data.currentPassword, current.passwordHash)
+      if (!matches) {
+        return NextResponse.json({ error: '현재 비밀번호가 일치하지 않습니다.' }, { status: 400 })
+      }
     }
 
     const passwordHash = await bcrypt.hash(parsed.data.password, 10)
