@@ -13,7 +13,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       <div className="fixed top-4 right-4 z-10">
         <ThemeToggle />
       </div>
-      <div className="flex flex-col justify-between gap-10 bg-card p-8 md:min-h-svh md:w-2/5 md:p-10">
+      <div className="flex flex-col justify-between gap-10 bg-sidebar p-8 md:min-h-svh md:w-2/5 md:p-10">
         <div className="flex items-center gap-2">
           <Image
             src="/logo_icon.png"
