@@ -36,16 +36,33 @@ export default auth(async (req) => {
     const userId = Number((req.auth.user as { id?: string } | undefined)?.id)
     const loginAt = (req.auth.user as { loginAt?: number } | undefined)?.loginAt
     if (Number.isFinite(userId) && loginAt !== undefined) {
-      const [row] = await db
-        .select({ passwordChangedAt: users.passwordChangedAt })
-        .from(users)
-        .where(eq(users.id, userId))
-      if (row?.passwordChangedAt && row.passwordChangedAt.getTime() > loginAt * 1000) {
-        const response = NextResponse.redirect(new URL('/login?sessionExpired=1', req.nextUrl.origin))
-        for (const name of SESSION_COOKIE_NAMES) {
-          response.cookies.delete(name)
+      // DB 장애 시 이 검사를 건너뛰어도 requireApprovedUser()가 관리자 API 호출 시점에
+      // 동일 검사를 하므로 보안 경계는 유지되고, 대신 DB 장애가 앱 전체의 모든 인증된
+      // 요청을 500으로 만드는 가용성 회귀를 막는다(fail open).
+      try {
+        const [row] = await db
+          .select({ passwordChangedAt: users.passwordChangedAt })
+          .from(users)
+          .where(eq(users.id, userId))
+        if (row?.passwordChangedAt && row.passwordChangedAt.getTime() > loginAt * 1000) {
+          const response = NextResponse.redirect(new URL('/login?sessionExpired=1', req.nextUrl.origin))
+          for (const name of SESSION_COOKIE_NAMES) {
+            // response.cookies.delete()는 secure 속성 없이 Set-Cookie를 내려보내는데,
+            // RFC 6265bis의 쿠키 접두사 규칙상 `__Secure-`로 시작하는 이름은 Secure
+            // 속성이 없으면 브라우저가 그 Set-Cookie 자체를 무시한다. 즉 프로덕션(HTTPS)에서는
+            // __Secure-authjs.session-token이 실제로는 지워지지 않는다 — secure를 명시한다.
+            response.cookies.set(name, '', {
+              path: '/',
+              maxAge: 0,
+              httpOnly: true,
+              sameSite: 'lax',
+              secure: name.startsWith('__Secure-'),
+            })
+          }
+          return response
         }
-        return response
+      } catch {
+        // DB 조회 실패 시 이 검사를 건너뛰고 요청을 그대로 통과시킨다.
       }
     }
   }

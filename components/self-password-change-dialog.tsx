@@ -135,7 +135,15 @@ export function SelfPasswordChangeDialog({ open, onOpenChange }: SelfPasswordCha
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                reset()
+                onOpenChange(false)
+              }}
+              disabled={submitting}
+            >
               취소
             </Button>
             <Button type="submit" disabled={!canSubmit || submitting}>
