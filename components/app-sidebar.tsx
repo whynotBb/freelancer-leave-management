@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -38,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
+import { SelfPasswordChangeDialog } from '@/components/self-password-change-dialog'
 import {
   Sidebar,
   SidebarContent,
@@ -104,6 +106,7 @@ export function AppSidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const { isMobile, setOpenMobile } = useSidebar()
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
 
   if (!session?.user) return null
   const role = (session.user as { role?: string }).role
@@ -205,8 +208,7 @@ export function AppSidebar() {
                   {getRoleLabel(role)}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                {/* TODO: 비밀번호 재설정 폼/API는 아직 없음 — UI만 우선 배치, 추후 연결 */}
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPasswordDialogOpen(true)}>
                   <KeyRoundIcon />
                   비밀번호 재설정
                 </DropdownMenuItem>
@@ -220,6 +222,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+      <SelfPasswordChangeDialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen} />
     </Sidebar>
   )
 }
