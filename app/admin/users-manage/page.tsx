@@ -160,30 +160,61 @@ export default function AdminUsersManagePage() {
 
   function renderPendingFields(user: ManagedUser, layout: 'row' | 'stack') {
     const role = getPendingRole(user.id)
-    const wrapClass = layout === 'row' ? 'flex items-center gap-2' : 'space-y-1'
-    return (
-      <div className={wrapClass}>
-        {layout === 'stack' && <p className="text-xs text-muted-foreground">권한</p>}
-        <Select
-          value={role}
-          onValueChange={(value) => setPendingRoles((prev) => ({ ...prev, [user.id]: value as PendingRole }))}
-        >
-          <SelectTrigger className={layout === 'row' ? 'w-32' : 'w-full'}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="FREELANCER">프리랜서</SelectItem>
-            <SelectItem value="APPROVER">결재자</SelectItem>
-          </SelectContent>
-        </Select>
-        {role === 'FREELANCER' && (
-          <div className={layout === 'stack' ? 'space-y-1' : undefined}>
-            {layout === 'stack' && <p className="text-xs text-muted-foreground">입사일</p>}
+
+    if (layout === 'row') {
+      return (
+        <div className="flex items-center gap-2">
+          <Select
+            value={role}
+            onValueChange={(value) => setPendingRoles((prev) => ({ ...prev, [user.id]: value as PendingRole }))}
+          >
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="FREELANCER">프리랜서</SelectItem>
+              <SelectItem value="APPROVER">결재자</SelectItem>
+            </SelectContent>
+          </Select>
+          {role === 'FREELANCER' && (
             <DatePicker
               value={pendingHireDates[user.id]}
               onChange={(value) => setPendingHireDates((prev) => ({ ...prev, [user.id]: value }))}
               placeholder="입사일 선택"
-              className={layout === 'stack' ? 'w-full' : 'w-40'}
+              className="w-40"
+            />
+          )}
+        </div>
+      )
+    }
+
+    // 카드 폭에 여유가 있으면 권한/입사일이 나란히, 좁으면 자동으로 줄바꿈되어 세로로
+    // 쌓이도록 flex-wrap을 쓴다 — 특정 브레이크포인트를 하드코딩하지 않고 실제 폭에 맞춘다.
+    return (
+      <div className="flex flex-wrap gap-3">
+        <div className="min-w-36 flex-1 space-y-1">
+          <p className="text-xs text-muted-foreground">권한</p>
+          <Select
+            value={role}
+            onValueChange={(value) => setPendingRoles((prev) => ({ ...prev, [user.id]: value as PendingRole }))}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="FREELANCER">프리랜서</SelectItem>
+              <SelectItem value="APPROVER">결재자</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {role === 'FREELANCER' && (
+          <div className="min-w-36 flex-1 space-y-1">
+            <p className="text-xs text-muted-foreground">입사일</p>
+            <DatePicker
+              value={pendingHireDates[user.id]}
+              onChange={(value) => setPendingHireDates((prev) => ({ ...prev, [user.id]: value }))}
+              placeholder="입사일 선택"
+              className="w-full"
             />
           </div>
         )}
@@ -237,7 +268,7 @@ export default function AdminUsersManagePage() {
     <div className="w-full">
       <PageHeader title="사용자 관리" description="가입 승인, 권한, 퇴사 처리를 한 화면에서 관리합니다." />
 
-      <div className="mb-4 flex items-center justify-between gap-2">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Button variant={tab === 'all' ? 'default' : 'outline'} onClick={() => setTab('all')}>
             전체 {users.length}
@@ -252,7 +283,7 @@ export default function AdminUsersManagePage() {
             placeholder="이름/이메일 검색"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-56 pl-8"
+            className="w-full pl-8 sm:w-56"
           />
         </div>
       </div>
@@ -324,14 +355,16 @@ export default function AdminUsersManagePage() {
                   <p className="font-medium">{user.name}</p>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
-                <div className="flex items-center justify-between">
-                  {user.signupStatus === 'PENDING' ? (
-                    renderPendingFields(user, 'stack')
-                  ) : (
-                    <Badge variant="outline" className={ROLE_BADGE_CLASS[user.role]}>
-                      {ROLE_LABEL[user.role]}
-                    </Badge>
-                  )}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    {user.signupStatus === 'PENDING' ? (
+                      renderPendingFields(user, 'stack')
+                    ) : (
+                      <Badge variant="outline" className={ROLE_BADGE_CLASS[user.role]}>
+                        {ROLE_LABEL[user.role]}
+                      </Badge>
+                    )}
+                  </div>
                   <Badge variant="outline" className={STATUS_BADGE_CLASS[user.signupStatus]}>
                     {STATUS_LABEL[user.signupStatus]}
                   </Badge>
