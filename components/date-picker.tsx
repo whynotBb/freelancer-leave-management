@@ -15,6 +15,7 @@ interface DatePickerProps {
   className?: string
   disabled?: boolean
   minDate?: string
+  maxDate?: string
 }
 
 // 키보드로 직접 입력하지 못하도록 텍스트 인풋 대신 버튼 트리거 + 캘린더 팝오버로 구성한다.
@@ -35,6 +36,7 @@ export function DatePicker({
   className,
   disabled,
   minDate,
+  maxDate,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const selected = value ? parseISO(value) : undefined
@@ -43,10 +45,18 @@ export function DatePicker({
   // 옵션이 지나치게 많다 — 올해 기준 최근 5년으로 좁힌다. 이미 그 범위보다 오래된 날짜가
   // 선택돼 있는 경우(예: 5년 넘은 입사일 수정)에는 그 연도까지는 포함해 선택값이 범위 밖으로
   // 밀려나 못 고르는 일이 없게 한다.
+  // maxDate가 주어지면(예: 미래 날짜인 휴가 신청) 상한을 그 연도까지 넓힌다 — 주어지지 않으면
+  // 기존과 동일하게 올해까지만 허용해 다른 호출부(입사일 입력 등)의 동작을 바꾸지 않는다.
   const currentYear = new Date().getFullYear()
   const selectedYear = selected?.getFullYear()
   const startYear = selectedYear !== undefined ? Math.min(selectedYear, currentYear - 5) : currentYear - 5
-  const endYear = selectedYear !== undefined ? Math.max(selectedYear, currentYear) : currentYear
+  const maxYear = maxDate ? parseISO(maxDate).getFullYear() : currentYear
+  const endYear = selectedYear !== undefined ? Math.max(selectedYear, maxYear) : maxYear
+
+  const disabledMatchers = [
+    ...(minDate ? [{ before: parseISO(minDate) }] : []),
+    ...(maxDate ? [{ after: parseISO(maxDate) }] : []),
+  ]
 
   return (
     <Popover open={open && !disabled} onOpenChange={(next) => !disabled && setOpen(next)}>
@@ -76,7 +86,7 @@ export function DatePicker({
           selected={selected}
           startMonth={new Date(startYear, 0)}
           endMonth={new Date(endYear, 11)}
-          disabled={minDate ? { before: parseISO(minDate) } : undefined}
+          disabled={disabledMatchers.length > 0 ? disabledMatchers : undefined}
           onSelect={(date) => {
             if (!date) return
             onChange(format(date, 'yyyy-MM-dd'))

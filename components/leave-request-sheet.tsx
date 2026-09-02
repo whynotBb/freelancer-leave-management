@@ -87,6 +87,9 @@ export function LeaveRequestSheet({
   const [editing, setEditing] = useState(false)
 
   const holidaySet = new Set(holidayDates)
+  // 연차 신청 날짜는 미래 날짜다 — DatePicker 기본 상한(올해)에 막혀 연말에는 다음 해 신청이
+  // 아예 불가능해지는 것을 막기 위해 내년 말까지 선택 가능하도록 넉넉히 열어둔다.
+  const maxLeaveDate = `${new Date().getFullYear() + 1}-12-31`
   const canEditFields = mode === 'create' || (mode === 'view' && document?.status === 'DRAFT' && editing)
   const isExistingDraft = mode === 'view' && document?.status === 'DRAFT'
 
@@ -113,11 +116,19 @@ export function LeaveRequestSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, document])
 
+  // 읽기 전용으로 보는 기존 문서(canEditFields === false)는 제출 시점에 이미 확정된
+  // requestedDays를 그대로 보여준다 — 이후 공휴일이 새로 등록돼도 재계산하지 않는다(설계 문서
+  // "이미 확정된 문서는 재계산하지 않는다" 규칙). 생성 중이거나 DRAFT를 수정 중일 때만
+  // 사용자가 바꾸는 날짜에 맞춰 실시간으로 미리보기 계산한다.
   let requestedDays = 0
-  try {
-    requestedDays = startDate && endDate ? calculateRequestedDays(startDate, endDate, type, holidaySet) : 0
-  } catch {
-    requestedDays = 0
+  if (!canEditFields) {
+    requestedDays = document?.requestedDays ?? 0
+  } else {
+    try {
+      requestedDays = startDate && endDate ? calculateRequestedDays(startDate, endDate, type, holidaySet) : 0
+    } catch {
+      requestedDays = 0
+    }
   }
 
   function handleTypeChange(next: LeaveType) {
@@ -147,9 +158,14 @@ export function LeaveRequestSheet({
         setError(data?.error ?? '처리에 실패했습니다.')
         return
       }
-      if (data?.overlapWarning) setOverlapWarning(true)
+      // 겹침 경고가 있으면 배너를 보여줘야 하므로 Sheet를 닫지 않는다. 경고가 없는
+      // 저장/제출은 성공 즉시 닫아 "임시저장"을 반복 클릭해 중복 DRAFT가 생기는 것을 막는다.
+      if (data?.overlapWarning) {
+        setOverlapWarning(true)
+      } else {
+        onOpenChange(false)
+      }
       onSaved()
-      if (action === 'submit') onOpenChange(false)
     } finally {
       setSubmitting(false)
     }
@@ -254,17 +270,17 @@ export function LeaveRequestSheet({
               <div className="flex gap-2">
                 <div className="flex-1 space-y-1.5">
                   <Label>시작일</Label>
-                  <DatePicker value={startDate} onChange={handleStartDateChange} disabled={!canEditFields} className="w-full" />
+                  <DatePicker value={startDate} onChange={handleStartDateChange} maxDate={maxLeaveDate} disabled={!canEditFields} className="w-full" />
                 </div>
                 <div className="flex-1 space-y-1.5">
                   <Label>종료일</Label>
-                  <DatePicker value={endDate} onChange={setEndDate} minDate={startDate || undefined} disabled={!canEditFields} className="w-full" />
+                  <DatePicker value={endDate} onChange={setEndDate} minDate={startDate || undefined} maxDate={maxLeaveDate} disabled={!canEditFields} className="w-full" />
                 </div>
               </div>
             ) : (
               <div className="space-y-1.5">
                 <Label>날짜</Label>
-                <DatePicker value={startDate} onChange={handleStartDateChange} disabled={!canEditFields} className="w-full" />
+                <DatePicker value={startDate} onChange={handleStartDateChange} maxDate={maxLeaveDate} disabled={!canEditFields} className="w-full" />
               </div>
             )}
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -341,6 +357,7 @@ export function LeaveRequestSheet({
         confirmLabel="취소하기"
         onConfirm={handleCancel}
         submitting={submitting}
+        error={error}
         destructive
       />
       <ConfirmDialog
@@ -351,6 +368,7 @@ export function LeaveRequestSheet({
         confirmLabel="삭제"
         onConfirm={handleDelete}
         submitting={submitting}
+        error={error}
         destructive
       />
     </>
