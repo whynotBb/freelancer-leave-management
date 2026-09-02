@@ -1,4 +1,5 @@
-import { addMonths, differenceInCalendarYears, format, isBefore, isEqual, parseISO, startOfDay } from 'date-fns'
+import { addMonths, format, isBefore, isEqual, parseISO, startOfDay } from 'date-fns'
+import { getCurrentCycle } from './leave-cycle'
 
 export function toISODate(date: Date): string {
   return format(date, 'yyyy-MM-dd')
@@ -19,5 +20,5 @@ export function isOnOrAfterDate(a: string, b: string): boolean {
 }
 
 export function getYearsOfService(hireDate: string, asOfDate: string): number {
-  return differenceInCalendarYears(parseISO(asOfDate), parseISO(hireDate)) + 1
+  return getCurrentCycle(hireDate, asOfDate).cycleIndex + 1
 }

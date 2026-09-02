@@ -40,4 +40,8 @@ describe('getYearsOfService', () => {
   it('입사일 당일은 1년차다', () => {
     expect(getYearsOfService('2026-09-02', '2026-09-02')).toBe(1)
   })
+
+  it('현재 날짜가 입사 월일보다 이르면(다음 기념일 전) 달력 연도가 바뀌어도 년차가 늘지 않는다', () => {
+    expect(getYearsOfService('2020-06-15', '2026-03-01')).toBe(6)
+  })
 })
