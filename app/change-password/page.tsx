@@ -68,7 +68,7 @@ export default function ChangePasswordPage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">비밀번호 변경</h1>
         <p className="text-sm text-muted-foreground">
-          임시 비밀번호로 로그인하셨습니다. 계속 이용하려면 새 비밀번호를 설정해 주세요.
+          임시 비밀번호로 로그인하셨습니다.<br/>계속 이용하려면 새 비밀번호를 설정해 주세요.
         </p>
       </div>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">

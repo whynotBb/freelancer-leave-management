@@ -56,7 +56,7 @@ export default function SignupPage() {
     return (
       <AuthLayout>
         <div className="space-y-4 text-center">
-          <p>가입 신청이 완료되었습니다. 관리자 승인 후 로그인할 수 있습니다.</p>
+          <p>가입 신청이 완료되었습니다.<br/>관리자 승인 후 로그인할 수 있습니다.</p>
           <Button onClick={() => router.push('/login')}>로그인 화면으로</Button>
         </div>
       </AuthLayout>
