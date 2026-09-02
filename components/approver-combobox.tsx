@@ -19,6 +19,7 @@ interface ApproverComboboxProps {
   onChange: (id: number) => void
   placeholder?: string
   className?: string
+  disabled?: boolean
 }
 
 export function ApproverCombobox({
@@ -27,6 +28,7 @@ export function ApproverCombobox({
   onChange,
   placeholder = '결재자 선택',
   className,
+  disabled,
 }: ApproverComboboxProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -37,11 +39,12 @@ export function ApproverCombobox({
   )
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open && !disabled} onOpenChange={(next) => !disabled && setOpen(next)}>
       <PopoverTrigger asChild>
         <Button
           type="button"
           variant="outline"
+          disabled={disabled}
           className={cn('w-48 justify-start font-normal', !selected && 'text-muted-foreground', className)}
         >
           {selected ? selected.name : placeholder}

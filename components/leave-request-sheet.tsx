@@ -53,12 +53,6 @@ interface LeaveRequestSheetProps {
   onSaved: () => void
 }
 
-const TYPE_LABEL: Record<LeaveType, string> = {
-  FULL: '연차',
-  AM_HALF: '오전 반차',
-  PM_HALF: '오후 반차',
-}
-
 const STATUS_LABEL: Record<MyRequestDocument['status'], string> = {
   DRAFT: '임시저장',
   PENDING: '대기',
@@ -240,6 +234,7 @@ export function LeaveRequestSheet({
                 approvers={approvers}
                 onChange={setApproverId}
                 className="w-full"
+                disabled={!canEditFields}
               />
             </div>
             <div className="space-y-1.5">
