@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addMonthsISO, isBeforeDate, isOnOrAfterDate } from './date-utils'
+import { addMonthsISO, isBeforeDate, isOnOrAfterDate, getYearsOfService } from './date-utils'
 
 describe('addMonthsISO', () => {
   it('일반적인 월 더하기', () => {
@@ -25,5 +25,19 @@ describe('isBeforeDate / isOnOrAfterDate', () => {
     expect(isOnOrAfterDate('2026-01-02', '2026-01-02')).toBe(true)
     expect(isOnOrAfterDate('2026-01-03', '2026-01-02')).toBe(true)
     expect(isOnOrAfterDate('2026-01-01', '2026-01-02')).toBe(false)
+  })
+})
+
+describe('getYearsOfService', () => {
+  it('입사 1주년이 지나지 않았으면 1년차다', () => {
+    expect(getYearsOfService('2026-01-29', '2026-09-02')).toBe(1)
+  })
+
+  it('입사일로부터 정확히 N번째 기념일이 지났으면 N+1년차다', () => {
+    expect(getYearsOfService('2018-01-29', '2026-09-02')).toBe(9)
+  })
+
+  it('입사일 당일은 1년차다', () => {
+    expect(getYearsOfService('2026-09-02', '2026-09-02')).toBe(1)
   })
 })

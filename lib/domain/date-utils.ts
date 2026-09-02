@@ -1,4 +1,4 @@
-import { addMonths, format, isBefore, isEqual, parseISO, startOfDay } from 'date-fns'
+import { addMonths, differenceInCalendarYears, format, isBefore, isEqual, parseISO, startOfDay } from 'date-fns'
 
 export function toISODate(date: Date): string {
   return format(date, 'yyyy-MM-dd')
@@ -16,4 +16,8 @@ export function isOnOrAfterDate(a: string, b: string): boolean {
   const da = startOfDay(parseISO(a))
   const db = startOfDay(parseISO(b))
   return isEqual(da, db) || isBefore(db, da)
+}
+
+export function getYearsOfService(hireDate: string, asOfDate: string): number {
+  return differenceInCalendarYears(parseISO(asOfDate), parseISO(hireDate)) + 1
 }
