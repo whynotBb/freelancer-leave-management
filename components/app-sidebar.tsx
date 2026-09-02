@@ -39,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
+import { ScrollToTopButton } from '@/components/scroll-to-top-button'
 import { SelfPasswordChangeDialog } from '@/components/self-password-change-dialog'
 import {
   Sidebar,
@@ -278,6 +279,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
         <main className="flex-1 p-6">{children}</main>
       </SidebarInset>
+      <ScrollToTopButton />
     </SidebarProvider>
   )
 }
