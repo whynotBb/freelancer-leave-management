@@ -37,7 +37,14 @@ type TimelineEntry =
       approverName: string | null
       rejectReason: string | null
     }
-  | { kind: 'ADJUSTMENT'; date: string; detail: string; reason: string; actorName: string | null }
+  | {
+      kind: 'ADJUSTMENT'
+      category: '연차 자동 발생' | '연차 조정' | '사용 조정'
+      date: string
+      detail: string
+      reason: string
+      actorName: string | null
+    }
 
 interface Approver {
   id: number
@@ -99,6 +106,7 @@ export default function DocumentsPage() {
 
   function loadDocuments() {
     setLoading(true)
+    setLoadError(null)
     fetch('/api/documents')
       .then((res) => {
         if (!res.ok) throw new Error('목록을 불러오지 못했습니다.')
@@ -116,8 +124,12 @@ export default function DocumentsPage() {
   useEffect(() => {
     loadDocuments()
     fetch('/api/admin/approvers')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('결재자 목록을 불러오지 못했습니다.')
+        return res.json()
+      })
       .then(setApprovers)
+      .catch(() => setApprovers([]))
   }, [])
 
   if (role && role !== 'FREELANCER') return null
@@ -229,7 +241,12 @@ export default function DocumentsPage() {
               ) : (
                 <div key={`adjustment-${index}`} className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
                   <div>
-                    <p>{entry.reason}</p>
+                    <p>
+                      <Badge variant="outline" className="mr-2">
+                        {entry.category}
+                      </Badge>
+                      {entry.reason}
+                    </p>
                     <p className="text-xs text-muted-foreground">{entry.date} · {entry.actorName ?? '-'}</p>
                   </div>
                   <span>{entry.detail}</span>
