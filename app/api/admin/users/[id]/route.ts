@@ -12,6 +12,7 @@ import {
 } from '@/lib/db/leave-adjustments'
 import { createNotification } from '@/lib/db/notifications'
 import { recordApproverChange } from '@/lib/db/approver-changes'
+import { findAssignableApprover } from '@/lib/db/approvers'
 
 const updateSchema = z.object({
   hireDate: z.string().optional(),
@@ -58,10 +59,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: '기본 결재자 변경은 최고관리자만 가능합니다.' }, { status: 403 })
     }
 
-    let newApprover: typeof users.$inferSelect | undefined
+    let newApprover: { id: number; name: string } | undefined
     if (body.defaultApproverId !== undefined) {
-      const [approver] = await db.select().from(users).where(eq(users.id, body.defaultApproverId))
-      if (!approver || (approver.role !== 'APPROVER' && approver.role !== 'SUPER_ADMIN')) {
+      const approver = await findAssignableApprover(body.defaultApproverId)
+      if (!approver) {
         return NextResponse.json({ error: '유효하지 않은 결재자입니다.' }, { status: 400 })
       }
       newApprover = approver

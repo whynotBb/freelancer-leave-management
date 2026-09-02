@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { eq } from 'drizzle-orm'
 import { requireFreelancer, toAuthErrorResponse } from '@/lib/auth/session'
 import { getHolidayDates } from '@/lib/db/holidays'
 import {
@@ -9,8 +8,7 @@ import {
   getMyDocumentSummary,
   getMyDocumentTimeline,
 } from '@/lib/db/leave-requests'
-import { db } from '@/lib/db/client'
-import { users } from '@/lib/db/schema'
+import { findAssignableApprover } from '@/lib/db/approvers'
 import { calculateRequestedDays } from '@/lib/domain/leave-day-count'
 
 export async function GET() {
@@ -32,15 +30,22 @@ export async function GET() {
   }
 }
 
-const bodySchema = z.object({
-  action: z.enum(['save', 'submit']),
-  title: z.string().min(1),
-  approverId: z.number(),
-  startDate: z.string(),
-  endDate: z.string(),
-  type: z.enum(['FULL', 'AM_HALF', 'PM_HALF']),
-  reason: z.string().min(1),
-})
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
+
+const bodySchema = z
+  .object({
+    action: z.enum(['save', 'submit']),
+    title: z.string().min(1),
+    approverId: z.number(),
+    startDate: z.string().regex(DATE_REGEX, '날짜 형식이 올바르지 않습니다.'),
+    endDate: z.string().regex(DATE_REGEX, '날짜 형식이 올바르지 않습니다.'),
+    type: z.enum(['FULL', 'AM_HALF', 'PM_HALF']),
+    reason: z.string().min(1),
+  })
+  .refine((body) => body.startDate <= body.endDate, {
+    message: '종료일이 시작일보다 이릅니다.',
+    path: ['endDate'],
+  })
 
 export async function POST(request: Request) {
   try {
@@ -63,8 +68,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '반차는 시작일과 종료일이 같아야 합니다.' }, { status: 400 })
     }
 
-    const [approver] = await db.select().from(users).where(eq(users.id, body.approverId))
-    if (!approver || (approver.role !== 'APPROVER' && approver.role !== 'SUPER_ADMIN')) {
+    const approver = await findAssignableApprover(body.approverId)
+    if (!approver) {
       return NextResponse.json({ error: '유효하지 않은 결재자입니다.' }, { status: 400 })
     }
 

@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
-import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { db } from '@/lib/db/client'
-import { users } from '@/lib/db/schema'
 import { requireFreelancer, toAuthErrorResponse } from '@/lib/auth/session'
 import { getHolidayDates } from '@/lib/db/holidays'
+import { findAssignableApprover } from '@/lib/db/approvers'
 import { calculateRequestedDays } from '@/lib/domain/leave-day-count'
 import {
   checkSubmissionEligibility,
@@ -13,20 +11,32 @@ import {
   updateDraftLeaveRequest,
 } from '@/lib/db/leave-requests'
 
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
+
+// 날짜 형식(정규식)은 필드 단위 검증이라 editFieldsSchema에 두면 save/submit 확장 양쪽이
+// 그대로 물려받는다. 반면 시작일<=종료일 순서 검증은 cancel 액션에는 날짜 필드 자체가 없어
+// editFieldsSchema에 refine으로 붙이면 .extend()를 쓸 수 없게 되므로(refine은 ZodObject를
+// ZodEffects로 감싸 버림), discriminatedUnion을 다 구성한 뒤 union 전체에 한 번만 refine을
+// 걸어 cancel을 건너뛰도록 한다 — save/submit 두 곳에 refine을 중복 작성하지 않기 위함이다.
 const editFieldsSchema = z.object({
   title: z.string().min(1),
   approverId: z.number(),
-  startDate: z.string(),
-  endDate: z.string(),
+  startDate: z.string().regex(DATE_REGEX, '날짜 형식이 올바르지 않습니다.'),
+  endDate: z.string().regex(DATE_REGEX, '날짜 형식이 올바르지 않습니다.'),
   type: z.enum(['FULL', 'AM_HALF', 'PM_HALF']),
   reason: z.string().min(1),
 })
 
-const patchSchema = z.discriminatedUnion('action', [
-  editFieldsSchema.extend({ action: z.literal('save') }),
-  editFieldsSchema.extend({ action: z.literal('submit') }),
-  z.object({ action: z.literal('cancel') }),
-])
+const patchSchema = z
+  .discriminatedUnion('action', [
+    editFieldsSchema.extend({ action: z.literal('save') }),
+    editFieldsSchema.extend({ action: z.literal('submit') }),
+    z.object({ action: z.literal('cancel') }),
+  ])
+  .refine((body) => body.action === 'cancel' || body.startDate <= body.endDate, {
+    message: '종료일이 시작일보다 이릅니다.',
+    path: ['endDate'],
+  })
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -67,8 +77,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: '반차는 시작일과 종료일이 같아야 합니다.' }, { status: 400 })
     }
 
-    const [approver] = await db.select().from(users).where(eq(users.id, body.approverId))
-    if (!approver || (approver.role !== 'APPROVER' && approver.role !== 'SUPER_ADMIN')) {
+    const approver = await findAssignableApprover(body.approverId)
+    if (!approver) {
       return NextResponse.json({ error: '유효하지 않은 결재자입니다.' }, { status: 400 })
     }
 
