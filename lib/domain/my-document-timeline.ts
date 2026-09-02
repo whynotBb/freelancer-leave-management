@@ -44,6 +44,7 @@ export type MyDocumentEntry =
     }
   | {
       kind: 'ADJUSTMENT'
+      category: '연차 자동 발생' | '연차 조정' | '사용 조정'
       date: string
       detail: string
       reason: string
@@ -87,6 +88,7 @@ export function buildMyDocumentTimeline(params: {
     .map((r) => ({
       entry: {
         kind: 'ADJUSTMENT',
+        category: '사용 조정',
         date: formatDateTime(r.createdAt),
         detail: formatAmount(r.requestedDays),
         reason: r.reason,
@@ -100,6 +102,7 @@ export function buildMyDocumentTimeline(params: {
     return {
       entry: {
         kind: 'ADJUSTMENT',
+        category: isAutoGrant ? '연차 자동 발생' : '연차 조정',
         date: formatDateTime(g.createdAt),
         detail: formatAmount(g.amount),
         reason: g.note ?? '-',

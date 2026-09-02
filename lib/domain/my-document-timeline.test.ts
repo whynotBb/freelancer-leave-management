@@ -64,6 +64,7 @@ describe('buildMyDocumentTimeline', () => {
     expect(result).toEqual([
       {
         kind: 'ADJUSTMENT',
+        category: '사용 조정',
         date: '2026-07-01 09:00',
         detail: '-1일',
         reason: '중복 신청 취소 보정',
@@ -88,6 +89,7 @@ describe('buildMyDocumentTimeline', () => {
     expect(result).toEqual([
       {
         kind: 'ADJUSTMENT',
+        category: '연차 자동 발생',
         date: '2026-04-01 09:00',
         detail: '+1일',
         reason: '-',
