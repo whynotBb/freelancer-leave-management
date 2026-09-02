@@ -8,6 +8,7 @@ import { getHolidayDates } from '@/lib/db/holidays'
 import { calculateRequestedDays } from '@/lib/domain/leave-day-count'
 import {
   checkSubmissionEligibility,
+  deleteDraftLeaveRequest,
   transitionOwnLeaveRequest,
   updateDraftLeaveRequest,
 } from '@/lib/db/leave-requests'
@@ -110,6 +111,28 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       const message = error instanceof Error ? error.message : '처리할 수 없습니다.'
       return NextResponse.json({ error: message }, { status: 400 })
     }
+  } catch (error) {
+    const response = toAuthErrorResponse(error)
+    if (response) return response
+    throw error
+  }
+}
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await requireFreelancer()
+    const userId = Number((session.user as { id?: string }).id)
+    const { id } = await params
+    const requestId = Number(id)
+    if (!Number.isInteger(requestId)) {
+      return NextResponse.json({ error: '대상을 찾을 수 없습니다.' }, { status: 404 })
+    }
+
+    const deleted = await deleteDraftLeaveRequest(requestId, userId)
+    if (!deleted) {
+      return NextResponse.json({ error: '대상을 찾을 수 없습니다.' }, { status: 404 })
+    }
+    return NextResponse.json({ ok: true })
   } catch (error) {
     const response = toAuthErrorResponse(error)
     if (response) return response
