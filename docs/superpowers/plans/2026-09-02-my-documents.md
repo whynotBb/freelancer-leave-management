@@ -192,6 +192,7 @@ describe('buildMyDocumentTimeline', () => {
           requestedDays: 1,
           status: 'PENDING',
           reason: '개인 사정',
+          approverId: 3,
           approverName: '김결재',
           rejectReason: null,
           createdAt: '2026-08-13T01:00:00.000Z',
@@ -210,6 +211,8 @@ describe('buildMyDocumentTimeline', () => {
         type: 'FULL',
         requestedDays: 1,
         status: 'PENDING',
+        reason: '개인 사정',
+        approverId: 3,
         approverName: '김결재',
         rejectReason: null,
       },
@@ -228,6 +231,7 @@ describe('buildMyDocumentTimeline', () => {
           requestedDays: -1,
           status: 'APPROVED',
           reason: '중복 신청 취소 보정',
+          approverId: 9,
           approverName: '관리자',
           rejectReason: null,
           createdAt: '2026-07-01T00:00:00.000Z',
@@ -282,6 +286,7 @@ describe('buildMyDocumentTimeline', () => {
           requestedDays: 1,
           status: 'APPROVED',
           reason: '-',
+          approverId: 3,
           approverName: '김결재',
           rejectReason: null,
           createdAt: '2026-02-01T00:00:00.000Z',
@@ -325,6 +330,7 @@ export interface MyLeaveRequestRow {
   requestedDays: number
   status: MyLeaveRequestStatus
   reason: string
+  approverId: number
   approverName: string | null
   rejectReason: string | null
   createdAt: string
@@ -349,6 +355,8 @@ export type MyDocumentEntry =
       type: 'FULL' | 'AM_HALF' | 'PM_HALF'
       requestedDays: number
       status: MyLeaveRequestStatus
+      reason: string
+      approverId: number
       approverName: string | null
       rejectReason: string | null
     }
@@ -382,6 +390,8 @@ export function buildMyDocumentTimeline(params: {
         type: r.type as 'FULL' | 'AM_HALF' | 'PM_HALF',
         requestedDays: r.requestedDays,
         status: r.status,
+        reason: r.reason,
+        approverId: r.approverId,
         approverName: r.approverName,
         rejectReason: r.rejectReason,
       },
@@ -533,6 +543,7 @@ export async function getMyDocumentTimeline(userId: number): Promise<MyDocumentE
       requestedDays: leaveRequests.requestedDays,
       status: leaveRequests.status,
       reason: leaveRequests.reason,
+      approverId: leaveRequests.approverId,
       approverName: approver.name,
       rejectReason: leaveRequests.rejectReason,
       createdAt: leaveRequests.createdAt,
@@ -1292,6 +1303,8 @@ export interface MyRequestDocument {
   type: LeaveType
   requestedDays: number
   status: 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED'
+  reason: string
+  approverId: number
   approverName: string | null
   rejectReason: string | null
 }
@@ -1372,10 +1385,11 @@ export function LeaveRequestSheet({
       setReason('')
     } else if (document) {
       setTitle(document.title)
+      setApproverId(document.approverId)
       setType(document.type)
       setStartDate(document.startDate)
       setEndDate(document.endDate)
-      setReason('')
+      setReason(document.reason)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, document])
@@ -1688,6 +1702,8 @@ type TimelineEntry =
       type: 'FULL' | 'AM_HALF' | 'PM_HALF'
       requestedDays: number
       status: MyRequestDocument['status']
+      reason: string
+      approverId: number
       approverName: string | null
       rejectReason: string | null
     }
@@ -1792,6 +1808,8 @@ export default function DocumentsPage() {
       type: entry.type,
       requestedDays: entry.requestedDays,
       status: entry.status,
+      reason: entry.reason,
+      approverId: entry.approverId,
       approverName: entry.approverName,
       rejectReason: entry.rejectReason,
     })
