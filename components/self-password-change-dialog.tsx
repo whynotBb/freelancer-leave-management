@@ -81,7 +81,11 @@ export function SelfPasswordChangeDialog({ open, onOpenChange }: SelfPasswordCha
       <DialogContent>
         <DialogHeader>
           <DialogTitle>비밀번호 재설정</DialogTitle>
-          <DialogDescription>현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다.</DialogDescription>
+          <DialogDescription>
+            현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다.
+            <br />
+            변경 후에는 자동으로 로그아웃되며,<br />새 비밀번호로 다시 로그인해야 합니다.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
