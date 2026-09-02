@@ -61,7 +61,7 @@ import {
 // 공통 메뉴: 아직 Task 18~22가 구현되지 않아 대상 페이지가 없다(임시 404, 정상 — 브리프 참고).
 const COMMON_LINKS = [
   { href: '/dashboard', label: '대시보드', icon: LayoutDashboardIcon },
-  { href: '/documents', label: '내 문서', icon: FileTextIcon },
+  { href: '/documents', label: '내 문서', icon: FileTextIcon, roles: ['FREELANCER'] },
   { href: '/approvals', label: '결재함', icon: InboxIcon },
 ]
 
@@ -138,7 +138,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
-              {COMMON_LINKS.map((link) => (
+              {COMMON_LINKS.filter((link) => 'roles' in link ? (link as { roles?: string[] }).roles?.includes(role ?? '') : true).map((link) => (
                 <SidebarMenuItem key={link.href}>
                   <SidebarMenuButton
                     render={<Link href={link.href} />}
