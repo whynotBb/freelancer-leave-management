@@ -103,6 +103,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     const hireDate = body.hireDate ?? target.hireDate
+
+    // 발생/사용 연차 조정은 연차 계산에 입사일이 반드시 필요하다(applyGrantAdjustment/
+    // applyUsageAdjustment가 hireDate를 필수 인자로 요구). 입사일이 없는 상태로 조용히
+    // 넘어가면 아무 것도 저장되지 않으면서 200 응답만 돌아가 화면에는 저장된 것처럼
+    // 보이다가 다시 0으로 되돌아가는 문제가 있었다 — 이를 막기 위해 명시적으로 막는다.
+    if (!hireDate && (body.grantedTotal !== undefined || body.usedTotal !== undefined)) {
+      return NextResponse.json({ error: '입사일을 먼저 등록해야 연차를 조정할 수 있습니다.' }, { status: 400 })
+    }
+
     let adjusted = false
     if (hireDate) {
       if (body.grantedTotal !== undefined) {
