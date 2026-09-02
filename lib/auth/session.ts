@@ -79,6 +79,14 @@ export async function requireApproverOrAbove() {
   return session
 }
 
+export async function requireFreelancer() {
+  const session = await requireApprovedUser()
+  if ((session.user as { role?: string }).role !== 'FREELANCER') {
+    throw new ForbiddenError('프리랜서만 접근할 수 있습니다.')
+  }
+  return session
+}
+
 export function toAuthErrorResponse(error: unknown): NextResponse | null {
   if (error instanceof UnauthorizedError) {
     return NextResponse.json({ error: error.message }, { status: 401 })
