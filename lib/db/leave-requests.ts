@@ -3,6 +3,8 @@ import { alias } from 'drizzle-orm/pg-core'
 import { db } from '@/lib/db/client'
 import { leaveGrants, leaveRequests, users } from '@/lib/db/schema'
 import { getLeaveBalance } from '@/lib/db/leave-adjustments'
+import { applyTransition, type LeaveRequestStatus } from '@/lib/domain/leave-workflow'
+import { hasOverlappingActiveRequest } from '@/lib/domain/leave-validation'
 import {
   buildMyDocumentTimeline,
   type MyDocumentEntry,
@@ -105,4 +107,118 @@ export async function getOwnActiveRequestRanges(
     .select({ startDate: leaveRequests.startDate, endDate: leaveRequests.endDate, status: leaveRequests.status })
     .from(leaveRequests)
     .where(and(eq(leaveRequests.userId, userId), ne(leaveRequests.type, 'ADJUSTMENT')))
+}
+
+export interface LeaveRequestFields {
+  title: string
+  approverId: number
+  startDate: string
+  endDate: string
+  type: 'FULL' | 'AM_HALF' | 'PM_HALF'
+  requestedDays: number
+  reason: string
+}
+
+export async function createLeaveRequest(
+  userId: number,
+  fields: LeaveRequestFields,
+  status: 'DRAFT' | 'PENDING'
+): Promise<{ id: number }> {
+  const [row] = await db
+    .insert(leaveRequests)
+    .values({
+      userId,
+      approverId: fields.approverId,
+      title: fields.title,
+      startDate: fields.startDate,
+      endDate: fields.endDate,
+      type: fields.type,
+      requestedDays: fields.requestedDays,
+      reason: fields.reason,
+      status,
+      submittedAt: status === 'PENDING' ? new Date() : null,
+    })
+    .returning({ id: leaveRequests.id })
+  return row
+}
+
+// DRAFT 상태 + 본인 소유일 때만 갱신한다. 조건에 안 맞으면(이미 제출됐거나 남의 문서) 아무 것도
+// 갱신하지 않고 false를 반환한다 — 호출부가 404로 처리한다.
+export async function updateDraftLeaveRequest(
+  id: number,
+  userId: number,
+  fields: LeaveRequestFields
+): Promise<boolean> {
+  const rows = await db
+    .update(leaveRequests)
+    .set({
+      title: fields.title,
+      approverId: fields.approverId,
+      startDate: fields.startDate,
+      endDate: fields.endDate,
+      type: fields.type,
+      requestedDays: fields.requestedDays,
+      reason: fields.reason,
+    })
+    .where(and(eq(leaveRequests.id, id), eq(leaveRequests.userId, userId), eq(leaveRequests.status, 'DRAFT')))
+    .returning({ id: leaveRequests.id })
+  return rows.length > 0
+}
+
+export async function deleteDraftLeaveRequest(id: number, userId: number): Promise<boolean> {
+  const rows = await db
+    .delete(leaveRequests)
+    .where(and(eq(leaveRequests.id, id), eq(leaveRequests.userId, userId), eq(leaveRequests.status, 'DRAFT')))
+    .returning({ id: leaveRequests.id })
+  return rows.length > 0
+}
+
+export async function getOwnLeaveRequestById(id: number, userId: number) {
+  const [row] = await db
+    .select()
+    .from(leaveRequests)
+    .where(and(eq(leaveRequests.id, id), eq(leaveRequests.userId, userId)))
+  return row ?? null
+}
+
+// applyTransition(기존 순수 함수)이 상태 전이 자체의 유효성(DRAFT→PENDING, PENDING→CANCELED 등)을
+// 검증하고, 잘못된 전이면 Error를 던진다 — 호출부(API 라우트)가 그 Error를 잡아 400으로 응답한다.
+export async function transitionOwnLeaveRequest(
+  id: number,
+  userId: number,
+  action: 'SUBMIT' | 'CANCEL'
+): Promise<{ status: LeaveRequestStatus } | null> {
+  const row = await getOwnLeaveRequestById(id, userId)
+  if (!row) return null
+  const nextStatus = applyTransition(row.status as LeaveRequestStatus, action, 'REQUESTER')
+  await db
+    .update(leaveRequests)
+    .set({
+      status: nextStatus,
+      submittedAt: action === 'SUBMIT' ? new Date() : row.submittedAt,
+    })
+    .where(eq(leaveRequests.id, id))
+  return { status: nextStatus }
+}
+
+// POST(신규 제출)와 PATCH(기존 DRAFT 제출) 양쪽에서 재사용하는 제출 시점 검증 — 잔여연차
+// 초과면 차단(에러), 기간이 겹치면 경고만 반환하고 차단하지 않는다(원 설계 문서 6장).
+export async function checkSubmissionEligibility(
+  userId: number,
+  startDate: string,
+  endDate: string,
+  requestedDays: number
+): Promise<{ ok: true; overlapWarning: boolean } | { ok: false; error: string }> {
+  const [me] = await db.select({ hireDate: users.hireDate }).from(users).where(eq(users.id, userId))
+  if (!me?.hireDate) {
+    return { ok: false, error: '입사일이 등록되지 않아 신청할 수 없습니다.' }
+  }
+  const today = new Date().toISOString().slice(0, 10)
+  const balance = await getLeaveBalance(userId, me.hireDate, today)
+  if (requestedDays > balance.remaining) {
+    return { ok: false, error: '잔여 연차를 초과하여 제출할 수 없습니다.' }
+  }
+  const existing = await getOwnActiveRequestRanges(userId)
+  const overlapWarning = hasOverlappingActiveRequest(existing, startDate, endDate)
+  return { ok: true, overlapWarning }
 }
