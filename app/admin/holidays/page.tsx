@@ -76,14 +76,14 @@ export default function HolidaysPage() {
   )
   const deleteTarget = holidays.find((h) => h.id === deleteTargetId) ?? null
 
-  async function handleCreate(date: string, name: string, isRecurring: boolean) {
+  async function handleCreate(startDate: string, endDate: string, name: string, isRecurring: boolean) {
     setFormSubmitting(true)
     setFormError(null)
     try {
       const res = await fetch('/api/admin/holidays', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, name, isRecurring }),
+        body: JSON.stringify({ startDate, endDate, name, isRecurring }),
       })
       if (!res.ok) {
         const body = await res.json().catch(() => null)

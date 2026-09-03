@@ -152,6 +152,11 @@ export function LeaveRequestSheet({
   // 시점의 실제 잔여 연차를 그대로 보여준다(신청일수를 다시 빼면 이중으로 차감돼 보인다).
   const projectedRemaining = canEditFields ? remaining - requestedDays : remaining
 
+  // 시작~종료일을 다 골랐는데도 그 안에 실제로 쉴 평일이 하나도 없는 경우(단일 날짜가
+  // 주말/공휴일이거나, 범위 전체가 주말/공휴일로만 이루어진 경우) — 신청해도 실제로
+  // 차감되는 연차가 없어 의미가 없으므로 제출을 막는다.
+  const noBusinessDays = canEditFields && startDate.length > 0 && endDate.length > 0 && requestedDays === 0
+
   function handleTypeChange(next: LeaveType) {
     setType(next)
     if (next !== 'FULL') setEndDate(startDate)
@@ -246,7 +251,13 @@ export function LeaveRequestSheet({
     }
   }
 
-  const canSubmit = title.length > 0 && approverId !== null && startDate.length > 0 && endDate.length > 0 && reason.length > 0
+  const canSubmit =
+    title.length > 0 &&
+    approverId !== null &&
+    startDate.length > 0 &&
+    endDate.length > 0 &&
+    reason.length > 0 &&
+    !noBusinessDays
 
   return (
     <>
@@ -332,13 +343,18 @@ export function LeaveRequestSheet({
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-xs text-muted-foreground">신청일수</p>
-                <p>{requestedDays}일</p>
+                <p className={noBusinessDays ? 'text-destructive' : undefined}>{requestedDays}일</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">{canEditFields ? '신청 후 잔여연차' : '잔여연차'}</p>
                 <p className={projectedRemaining < 0 ? 'text-destructive' : undefined}>{projectedRemaining}일</p>
               </div>
             </div>
+            {noBusinessDays && (
+              <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                선택한 날짜는 주말/공휴일이라 연차를 신청할 수 없습니다. 다른 날짜를 선택해 주세요.
+              </p>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="leave-reason">
                 사유 <RequiredMark />

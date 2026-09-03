@@ -219,6 +219,9 @@ export async function checkSubmissionEligibility(
   type: LeaveRequestType,
   requestedDays: number
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (requestedDays === 0) {
+    return { ok: false, error: '선택한 날짜는 주말/공휴일이라 신청할 수 없습니다.' }
+  }
   const [me] = await db.select({ hireDate: users.hireDate }).from(users).where(eq(users.id, userId))
   if (!me?.hireDate) {
     return { ok: false, error: '입사일이 등록되지 않아 신청할 수 없습니다.' }

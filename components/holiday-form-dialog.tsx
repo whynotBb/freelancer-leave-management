@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { DatePicker } from '@/components/date-picker'
+import { DateRangePicker } from '@/components/date-picker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { HOLIDAY_PROJECTION_YEARS_AFTER } from '@/lib/domain/holidays'
@@ -19,7 +19,7 @@ import { HOLIDAY_PROJECTION_YEARS_AFTER } from '@/lib/domain/holidays'
 interface HolidayFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onConfirm: (date: string, name: string, isRecurring: boolean) => void
+  onConfirm: (startDate: string, endDate: string, name: string, isRecurring: boolean) => void
   submitting?: boolean
   error?: string | null
 }
@@ -31,7 +31,8 @@ export function HolidayFormDialog({
   submitting = false,
   error = null,
 }: HolidayFormDialogProps) {
-  const [date, setDate] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [name, setName] = useState('')
   const [isRecurring, setIsRecurring] = useState(false)
 
@@ -39,7 +40,8 @@ export function HolidayFormDialog({
   useEffect(() => {
     if (open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setDate('')
+      setStartDate('')
+      setEndDate('')
       setName('')
       setIsRecurring(false)
     }
@@ -56,7 +58,8 @@ export function HolidayFormDialog({
           <DialogTitle>공휴일 추가</DialogTitle>
           <DialogDescription>
             신정처럼 매년 같은 날짜인 공휴일은 &quot;매년 반복&quot;을 선택하세요. 선택한
-            날짜의 월/일이 매년 반복 적용됩니다.
+            날짜의 월/일이 매년 반복 적용됩니다. 설날·추석 연휴처럼 여러 날짜에 걸친
+            공휴일은 시작일~종료일을 선택하세요(하루짜리는 같은 날짜를 두 번 선택).
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -69,10 +72,14 @@ export function HolidayFormDialog({
             <Label htmlFor="holiday-recurring">매년 반복</Label>
           </div>
           <div className="space-y-1.5">
-            <Label>날짜</Label>
-            <DatePicker
-              value={date || undefined}
-              onChange={setDate}
+            <Label>기간</Label>
+            <DateRangePicker
+              startValue={startDate}
+              endValue={endDate}
+              onChange={(start, end) => {
+                setStartDate(start)
+                setEndDate(end)
+              }}
               maxDate={`${new Date().getFullYear() + HOLIDAY_PROJECTION_YEARS_AFTER}-12-31`}
               className="w-full"
             />
@@ -93,8 +100,8 @@ export function HolidayFormDialog({
             닫기
           </Button>
           <Button
-            onClick={() => onConfirm(date, name, isRecurring)}
-            disabled={submitting || date.length === 0 || name.trim().length === 0}
+            onClick={() => onConfirm(startDate, endDate, name, isRecurring)}
+            disabled={submitting || startDate.length === 0 || endDate.length === 0 || name.trim().length === 0}
           >
             {submitting ? '저장 중...' : '추가'}
           </Button>
