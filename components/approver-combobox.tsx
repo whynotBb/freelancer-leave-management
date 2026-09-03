@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { SearchIcon } from 'lucide-react'
+import { CheckIcon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -68,15 +68,21 @@ export function ApproverCombobox({
             <button
               key={a.id}
               type="button"
-              className="w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+              className={cn(
+                'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground',
+                a.id === value && 'bg-accent text-accent-foreground'
+              )}
               onClick={() => {
                 onChange(a.id)
                 setOpen(false)
                 setQuery('')
               }}
             >
-              <div className="font-medium">{a.name}</div>
-              <div className="text-xs text-muted-foreground">{a.email}</div>
+              <div className="flex-1">
+                <div className="font-medium">{a.name}</div>
+                <div className="text-xs text-muted-foreground">{a.email}</div>
+              </div>
+              {a.id === value && <CheckIcon className="size-4 shrink-0" />}
             </button>
           ))}
         </div>

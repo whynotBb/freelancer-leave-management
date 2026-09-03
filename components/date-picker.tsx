@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
+import type { DateRange } from 'react-day-picker'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -91,6 +92,108 @@ export function DatePicker({
             if (!date) return
             onChange(format(date, 'yyyy-MM-dd'))
             setOpen(false)
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+interface DateRangePickerProps {
+  startValue?: string
+  endValue?: string
+  onChange: (start: string, end: string) => void
+  placeholder?: string
+  className?: string
+  disabled?: boolean
+  minDate?: string
+  maxDate?: string
+}
+
+// 연차(전일) 신청은 시작일/종료일을 한 번에 고르는 게 자연스러워, 별도 트리거 2개 대신
+// 캘린더 하나에서 범위를 선택하는 range 모드 피커를 둔다.
+export function DateRangePicker({
+  startValue,
+  endValue,
+  onChange,
+  placeholder = '기간 선택',
+  className,
+  disabled,
+  minDate,
+  maxDate,
+}: DateRangePickerProps) {
+  const [open, setOpen] = useState(false)
+  // react-day-picker의 range 선택은 클릭 한 번만으로도 이미 완결된 1일짜리 range({from,to}가
+  // 모두 채워짐)를 돌려주므로, range.to 유무만으로는 "시작일만 찍었는지 종료일까지 찍었는지"를
+  // 구분할 수 없다. 팝오버를 여는 시점에 초기화되는 이 플래그로 "이번에 연 뒤 몇 번째 클릭인지"를
+  // 직접 추적해, 첫 클릭에서는 닫지 않고 두 번째 클릭에서만 닫는다(같은 날을 두 번 찍으면 1일 선택).
+  const [pendingSecondClick, setPendingSecondClick] = useState(false)
+  const selectedRange: DateRange | undefined = startValue
+    ? { from: parseISO(startValue), to: endValue ? parseISO(endValue) : undefined }
+    : undefined
+
+  const currentYear = new Date().getFullYear()
+  const startYear = startValue ? Math.min(parseISO(startValue).getFullYear(), currentYear - 5) : currentYear - 5
+  const maxYear = maxDate ? parseISO(maxDate).getFullYear() : currentYear
+  const endYear = endValue ? Math.max(parseISO(endValue).getFullYear(), maxYear) : maxYear
+
+  const disabledMatchers = [
+    ...(minDate ? [{ before: parseISO(minDate) }] : []),
+    ...(maxDate ? [{ after: parseISO(maxDate) }] : []),
+  ]
+
+  const label = startValue
+    ? `${format(parseISO(startValue), 'yyyy-MM-dd')}${
+        endValue && endValue !== startValue ? ` ~ ${format(parseISO(endValue), 'yyyy-MM-dd')}` : ''
+      }`
+    : placeholder
+
+  return (
+    <Popover
+      open={open && !disabled}
+      onOpenChange={(next) => {
+        if (disabled) return
+        setOpen(next)
+        if (next) setPendingSecondClick(false)
+      }}
+    >
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={disabled}
+          className={cn(
+            'justify-start gap-2 font-normal hover:bg-accent hover:text-accent-foreground aria-expanded:bg-accent aria-expanded:text-accent-foreground',
+            !startValue && 'text-muted-foreground',
+            className
+          )}
+        >
+          <CalendarIcon className="size-4" />
+          {label}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-auto p-0"
+        align="start"
+        onPointerDownOutside={ignoreSelectInteraction}
+        onFocusOutside={ignoreSelectInteraction}
+      >
+        <Calendar
+          mode="range"
+          numberOfMonths={2}
+          selected={selectedRange}
+          startMonth={new Date(startYear, 0)}
+          endMonth={new Date(endYear, 11)}
+          disabled={disabledMatchers.length > 0 ? disabledMatchers : undefined}
+          onSelect={(range) => {
+            if (!range?.from) return
+            onChange(format(range.from, 'yyyy-MM-dd'), format(range.to ?? range.from, 'yyyy-MM-dd'))
+            if (pendingSecondClick) {
+              setOpen(false)
+              setPendingSecondClick(false)
+            } else {
+              setPendingSecondClick(true)
+            }
           }}
         />
       </PopoverContent>

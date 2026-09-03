@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addMonthsISO, isBeforeDate, isOnOrAfterDate, getYearsOfService } from './date-utils'
+import { addMonthsISO, isBeforeDate, isOnOrAfterDate, getYearsOfService, getMonthsOfService } from './date-utils'
 
 describe('addMonthsISO', () => {
   it('일반적인 월 더하기', () => {
@@ -43,5 +43,23 @@ describe('getYearsOfService', () => {
 
   it('현재 날짜가 입사 월일보다 이르면(다음 기념일 전) 달력 연도가 바뀌어도 년차가 늘지 않는다', () => {
     expect(getYearsOfService('2020-06-15', '2026-03-01')).toBe(6)
+  })
+})
+
+describe('getMonthsOfService', () => {
+  it('입사 당일은 0개월이다', () => {
+    expect(getMonthsOfService('2026-09-02', '2026-09-02')).toBe(0)
+  })
+
+  it('한 달이 채 지나지 않았으면 0개월이다', () => {
+    expect(getMonthsOfService('2026-08-15', '2026-09-02')).toBe(0)
+  })
+
+  it('정확히 한 달이 지나면 1개월이다', () => {
+    expect(getMonthsOfService('2026-08-02', '2026-09-02')).toBe(1)
+  })
+
+  it('일자가 안 채워지면 절삭되어 계산된다', () => {
+    expect(getMonthsOfService('2024-01-15', '2026-09-02')).toBe(31)
   })
 })

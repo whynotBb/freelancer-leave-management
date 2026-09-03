@@ -9,9 +9,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/loading-spinner'
+import { CategoryBadge, type HistoryCategory } from '@/components/category-badge'
 
 interface HistoryUser {
   id: number
@@ -25,20 +25,11 @@ interface HistoryUser {
 }
 
 interface HistoryEntry {
-  category: '연차 자동 발생' | '연차 조정' | '사용' | '결재자 변경' | '입사일 변경' | '만근 예외'
+  category: HistoryCategory
   date: string
   detail: string
   reason: string
   actorName: string | null
-}
-
-const CATEGORY_BADGE_CLASS: Record<HistoryEntry['category'], string> = {
-  '연차 자동 발생': 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
-  '연차 조정': 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300',
-  사용: 'border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300',
-  '결재자 변경': 'border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300',
-  '입사일 변경': 'border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300',
-  '만근 예외': 'border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-300',
 }
 
 interface UserHistoryPanelProps {
@@ -137,7 +128,7 @@ export function UserHistoryPanel({ open, onOpenChange, user }: UserHistoryPanelP
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">잔여 연차</p>
-                <p>{user.remaining}</p>
+                <p className={user.remaining < 0 ? 'text-destructive' : undefined}>{user.remaining}</p>
               </div>
             </div>
             <div className="mt-4 flex min-h-0 flex-1 flex-col">
@@ -148,13 +139,11 @@ export function UserHistoryPanel({ open, onOpenChange, user }: UserHistoryPanelP
                 ) : history.length === 0 ? (
                   <p className="text-sm text-muted-foreground">이력이 없습니다.</p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {history.map((entry, i) => (
                       <div key={i} className="rounded-md border p-3 text-sm">
                         <div className="flex items-center justify-between">
-                          <Badge variant="outline" className={CATEGORY_BADGE_CLASS[entry.category]}>
-                            {entry.category}
-                          </Badge>
+                          <CategoryBadge category={entry.category} />
                           <span className="text-xs text-muted-foreground">{entry.date}</span>
                         </div>
                         <p className="mt-1">{entry.detail}</p>

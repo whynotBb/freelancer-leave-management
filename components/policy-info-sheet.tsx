@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { SearchIcon } from 'lucide-react'
 import {
   Sheet,
@@ -11,12 +11,12 @@ import {
 } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
 
-interface PolicySection {
+export interface PolicySection {
   title: string
   items: string[]
 }
 
-const SECTIONS: PolicySection[] = [
+export const ADMIN_POLICY_SECTIONS: PolicySection[] = [
   {
     title: '연차 발생 기준',
     items: [
@@ -88,11 +88,6 @@ const SECTIONS: PolicySection[] = [
   },
 ]
 
-// 매칭 검색어 판단용으로 <strong> 태그를 제거한 평문을 섹션별로 미리 만들어 둔다.
-const SECTION_PLAIN_TEXT = SECTIONS.map(
-  (section) => `${section.title} ${section.items.join(' ')}`.replace(/<\/?strong>/g, '').toLowerCase()
-)
-
 function escapeRegExp(text: string) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
@@ -131,12 +126,24 @@ function renderItem(text: string, query: string, keyPrefix: string) {
 interface PolicyInfoSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  title: string
+  description: string
+  sections: PolicySection[]
 }
 
-export function PolicyInfoSheet({ open, onOpenChange }: PolicyInfoSheetProps) {
+export function PolicyInfoSheet({ open, onOpenChange, title, description, sections }: PolicyInfoSheetProps) {
   const [query, setQuery] = useState('')
   const contentRef = useRef<HTMLDivElement>(null)
   const sectionRefs = useRef<(HTMLElement | null)[]>([])
+
+  // 매칭 검색어 판단용으로 <strong> 태그를 제거한 평문을 섹션별로 미리 만들어 둔다.
+  const sectionPlainText = useMemo(
+    () =>
+      sections.map(
+        (section) => `${section.title} ${section.items.join(' ')}`.replace(/<\/?strong>/g, '').toLowerCase()
+      ),
+    [sections]
+  )
 
   function handleOpenChange(next: boolean) {
     if (!next) setQuery('')
@@ -146,17 +153,17 @@ export function PolicyInfoSheet({ open, onOpenChange }: PolicyInfoSheetProps) {
   useEffect(() => {
     const trimmed = query.trim().toLowerCase()
     if (!trimmed) return
-    const firstMatchIndex = SECTION_PLAIN_TEXT.findIndex((text) => text.includes(trimmed))
+    const firstMatchIndex = sectionPlainText.findIndex((text) => text.includes(trimmed))
     if (firstMatchIndex === -1) return
     sectionRefs.current[firstMatchIndex]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [query])
+  }, [query, sectionPlainText])
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent className="data-[side=right]:w-[95vw] data-[side=right]:sm:max-w-none min-[560px]:data-[side=right]:w-[max(480px,32vw)]">
         <SheetHeader className="border-b border-border">
-          <SheetTitle>프리랜서 연차 관리 안내</SheetTitle>
-          <SheetDescription>연차 발생·소멸 기준과 휴가 정책, 화면 이용 방법을 안내합니다.</SheetDescription>
+          <SheetTitle>{title}</SheetTitle>
+          <SheetDescription>{description}</SheetDescription>
           <div className="relative mt-2">
             <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -169,7 +176,7 @@ export function PolicyInfoSheet({ open, onOpenChange }: PolicyInfoSheetProps) {
         </SheetHeader>
         <div ref={contentRef} className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
           <div className="space-y-5">
-            {SECTIONS.map((section, sectionIndex) => (
+            {sections.map((section, sectionIndex) => (
               <section
                 key={section.title}
                 ref={(el) => {

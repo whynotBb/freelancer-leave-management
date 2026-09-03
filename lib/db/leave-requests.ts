@@ -4,17 +4,17 @@ import { db } from '@/lib/db/client'
 import { leaveGrants, leaveRequests, users } from '@/lib/db/schema'
 import { getLeaveBalance } from '@/lib/db/leave-adjustments'
 import { applyTransition, type LeaveRequestStatus } from '@/lib/domain/leave-workflow'
-import { hasOverlappingActiveRequest } from '@/lib/domain/leave-validation'
+import { hasOverlappingActiveRequest, isBeyondBackdateLimit } from '@/lib/domain/leave-validation'
 import {
   buildMyDocumentTimeline,
   type MyDocumentEntry,
   type MyLeaveRequestRow,
 } from '@/lib/domain/my-document-timeline'
-import { getYearsOfService } from '@/lib/domain/date-utils'
+import { getMonthsOfService } from '@/lib/domain/date-utils'
 
 export interface MyDocumentSummary {
   hireDate: string | null
-  yearsOfService: number | null
+  monthsOfService: number | null
   granted: number
   used: number
   remaining: number
@@ -30,7 +30,7 @@ export async function getMyDocumentSummary(userId: number): Promise<MyDocumentSu
   if (!user?.hireDate) {
     return {
       hireDate: null,
-      yearsOfService: null,
+      monthsOfService: null,
       granted: 0,
       used: 0,
       remaining: 0,
@@ -42,7 +42,7 @@ export async function getMyDocumentSummary(userId: number): Promise<MyDocumentSu
   const balance = await getLeaveBalance(userId, user.hireDate, today)
   return {
     hireDate: user.hireDate,
-    yearsOfService: getYearsOfService(user.hireDate, today),
+    monthsOfService: getMonthsOfService(user.hireDate, today),
     granted: balance.granted,
     used: balance.used,
     remaining: balance.remaining,
@@ -214,6 +214,9 @@ export async function checkSubmissionEligibility(
     return { ok: false, error: '입사일이 등록되지 않아 신청할 수 없습니다.' }
   }
   const today = new Date().toISOString().slice(0, 10)
+  if (isBeyondBackdateLimit(startDate, today)) {
+    return { ok: false, error: '신청 시작일이 오늘로부터 1개월보다 이전이라 제출할 수 없습니다. 결재자에게 문의해 주세요.' }
+  }
   const balance = await getLeaveBalance(userId, me.hireDate, today)
   if (requestedDays > balance.remaining) {
     return { ok: false, error: '잔여 연차를 초과하여 제출할 수 없습니다.' }

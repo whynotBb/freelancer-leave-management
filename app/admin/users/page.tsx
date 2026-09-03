@@ -12,7 +12,7 @@ import { LeaveAdjustmentDialog } from '@/components/leave-adjustment-dialog'
 import { AttendanceExceptionDialog } from '@/components/attendance-exception-dialog'
 import { LoadingSpinner } from '@/components/loading-spinner'
 import { PageHeader } from '@/components/page-header'
-import { PolicyInfoSheet } from '@/components/policy-info-sheet'
+import { ADMIN_POLICY_SECTIONS, PolicyInfoSheet } from '@/components/policy-info-sheet'
 import { UserHistoryPanel } from '@/components/user-history-panel'
 import {
   Table,
@@ -392,7 +392,9 @@ export default function AdminUsersPage() {
           </div>
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">잔여 연차</p>
-            <p className="flex h-9 items-center px-3 py-1 text-base text-muted-foreground md:text-sm">
+            <p
+              className={`flex h-9 items-center px-3 py-1 text-base md:text-sm ${remaining < 0 ? 'text-destructive' : 'text-muted-foreground'}`}
+            >
               {remaining}
             </p>
           </div>
@@ -537,7 +539,7 @@ export default function AdminUsersPage() {
                         onKeyDown={blockNegativeKey}
                       />
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{remaining}</TableCell>
+                    <TableCell className={remaining < 0 ? 'text-destructive' : 'text-muted-foreground'}>{remaining}</TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
                         <div className="flex items-center gap-2">
@@ -629,7 +631,13 @@ export default function AdminUsersPage() {
         user={users.find((u) => u.id === historyUserId) ?? null}
       />
 
-      <PolicyInfoSheet open={policyOpen} onOpenChange={setPolicyOpen} />
+      <PolicyInfoSheet
+        open={policyOpen}
+        onOpenChange={setPolicyOpen}
+        title="프리랜서 연차 관리 안내"
+        description="연차 발생·소멸 기준과 휴가 정책, 화면 이용 방법을 안내합니다."
+        sections={ADMIN_POLICY_SECTIONS}
+      />
 
       <AttendanceExceptionDialog
         key={attendanceExceptionUserId ?? 'none'}

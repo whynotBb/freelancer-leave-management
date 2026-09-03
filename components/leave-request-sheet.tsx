@@ -1,24 +1,46 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { format, parseISO } from 'date-fns'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
-import { Badge } from '@/components/ui/badge'
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { DatePicker } from '@/components/date-picker'
+import { DatePicker, DateRangePicker } from '@/components/date-picker'
 import { ApproverCombobox } from '@/components/approver-combobox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { StatusBadge } from '@/components/status-badge'
 import { calculateRequestedDays, type LeaveType } from '@/lib/domain/leave-day-count'
+import { addMonthsISO } from '@/lib/domain/date-utils'
+
+function RequiredMark() {
+  return <span className="text-destructive">*</span>
+}
+
+const TITLE_TYPE_LABEL: Record<LeaveType, string> = {
+  FULL: '연차',
+  AM_HALF: '오전 반차',
+  PM_HALF: '오후 반차',
+}
+
+// 신청서 제목은 실수 방지를 위해 사용자가 직접 입력하지 않고 신청인/기간/유형으로부터 자동 생성한다.
+function buildAutoTitle(requesterName: string, type: LeaveType, startDate: string, endDate: string): string {
+  if (!startDate) return ''
+  const period =
+    !endDate || startDate === endDate
+      ? format(parseISO(startDate), 'yyyy.MM.dd')
+      : `${format(parseISO(startDate), 'yyyy.MM.dd')} ~ ${format(parseISO(endDate), 'yyyy.MM.dd')}`
+  return `${requesterName} - ${period} ${TITLE_TYPE_LABEL[type]} 신청 합니다.`
+}
 
 export interface MyRequestDocument {
   id: number
@@ -53,14 +75,6 @@ interface LeaveRequestSheetProps {
   onSaved: () => void
 }
 
-const STATUS_LABEL: Record<MyRequestDocument['status'], string> = {
-  DRAFT: '임시저장',
-  PENDING: '대기',
-  APPROVED: '승인완료',
-  REJECTED: '반려',
-  CANCELED: '취소',
-}
-
 export function LeaveRequestSheet({
   open,
   onOpenChange,
@@ -73,7 +87,6 @@ export function LeaveRequestSheet({
   holidayDates,
   onSaved,
 }: LeaveRequestSheetProps) {
-  const [title, setTitle] = useState('')
   const [approverId, setApproverId] = useState<number | null>(null)
   const [type, setType] = useState<LeaveType>('FULL')
   const [startDate, setStartDate] = useState('')
@@ -90,6 +103,9 @@ export function LeaveRequestSheet({
   // 연차 신청 날짜는 미래 날짜다 — DatePicker 기본 상한(올해)에 막혀 연말에는 다음 해 신청이
   // 아예 불가능해지는 것을 막기 위해 내년 말까지 선택 가능하도록 넉넉히 열어둔다.
   const maxLeaveDate = `${new Date().getFullYear() + 1}-12-31`
+  // 결재가 늦게 올라오는 경우를 감안해 과거 날짜 신청 자체는 허용하되, 오늘로부터 1개월보다
+  // 이전 날짜는 달력에서부터 선택하지 못하게 막는다(서버 측 제출 검증은 checkSubmissionEligibility).
+  const minLeaveDate = addMonthsISO(format(new Date(), 'yyyy-MM-dd'), -1)
   const canEditFields = mode === 'create' || (mode === 'view' && document?.status === 'DRAFT' && editing)
   const isExistingDraft = mode === 'view' && document?.status === 'DRAFT'
 
@@ -99,14 +115,12 @@ export function LeaveRequestSheet({
     setOverlapWarning(false)
     setEditing(false)
     if (mode === 'create') {
-      setTitle('')
       setApproverId(defaultApproverId)
       setType('FULL')
       setStartDate('')
       setEndDate('')
       setReason('')
     } else if (document) {
-      setTitle(document.title)
       setApproverId(document.approverId)
       setType(document.type)
       setStartDate(document.startDate)
@@ -131,6 +145,15 @@ export function LeaveRequestSheet({
     }
   }
 
+  // 편집 가능한 동안(생성 중/임시저장 수정 중)에는 항상 최신 입력값으로 자동 재생성하고,
+  // 그 외에는 제출 시점에 이미 확정돼 저장된 제목을 그대로 보여준다.
+  const title = canEditFields ? buildAutoTitle(requesterName, type, startDate, endDate) : document?.title ?? ''
+
+  // 편집 중에는 "이 신청이 반영되면 얼마가 남는지"를 바로 보여줘야 실수로 잔여 연차를 초과해
+  // 제출하는 것을 미리 막을 수 있다. 이미 제출이 끝난 문서를 볼 때는 그 문서가 반영되기 전
+  // 시점의 실제 잔여 연차를 그대로 보여준다(신청일수를 다시 빼면 이중으로 차감돼 보인다).
+  const projectedRemaining = canEditFields ? remaining - requestedDays : remaining
+
   function handleTypeChange(next: LeaveType) {
     setType(next)
     if (next !== 'FULL') setEndDate(startDate)
@@ -139,6 +162,21 @@ export function LeaveRequestSheet({
   function handleStartDateChange(value: string) {
     setStartDate(value)
     if (type !== 'FULL') setEndDate(value)
+  }
+
+  function handleRangeChange(start: string, end: string) {
+    setStartDate(start)
+    setEndDate(end)
+  }
+
+  // 실수로 딤 클릭이나 ESC로 작성 중인 내용을 잃지 않도록, 닫힘 이유가 바깥 클릭/ESC일 때는
+  // base-ui의 기본 닫힘 처리를 취소한다. X버튼(close-press)이나 취소/삭제 버튼(imperative)으로만 닫힌다.
+  function handleOpenChange(next: boolean, eventDetails: { reason: string; cancel: () => void }) {
+    if (!next && (eventDetails.reason === 'outside-press' || eventDetails.reason === 'escape-key')) {
+      eventDetails.cancel()
+      return
+    }
+    onOpenChange(next)
   }
 
   async function submitForm(action: 'save' | 'submit') {
@@ -158,7 +196,7 @@ export function LeaveRequestSheet({
         setError(data?.error ?? '처리에 실패했습니다.')
         return
       }
-      // 겹침 경고가 있으면 배너를 보여줘야 하므로 Sheet를 닫지 않는다. 경고가 없는
+      // 겹침 경고가 있으면 배너를 보여줘야 하므로 모달을 닫지 않는다. 경고가 없는
       // 저장/제출은 성공 즉시 닫아 "임시저장"을 반복 클릭해 중복 DRAFT가 생기는 것을 막는다.
       if (data?.overlapWarning) {
         setOverlapWarning(true)
@@ -217,34 +255,31 @@ export function LeaveRequestSheet({
 
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>{mode === 'create' ? '연차 신청' : title}</SheetTitle>
-            <SheetDescription>
+      <Dialog open={open} onOpenChange={handleOpenChange} disablePointerDismissal>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[600px]">
+          <DialogHeader className="border-b border-border pb-4">
+            <DialogTitle>{mode === 'create' ? '연차 신청' : title}</DialogTitle>
+            <DialogDescription>
               {mode === 'view' && document ? (
-                <Badge variant="outline">{STATUS_LABEL[document.status]}</Badge>
+                <StatusBadge status={document.status} />
               ) : (
                 '결재자를 지정하고 연차를 신청합니다.'
               )}
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-4 px-4">
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
             <div className="space-y-1.5">
               <Label>신청인</Label>
               <Input value={requesterName} disabled readOnly />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="leave-title">제목</Label>
-              <Input
-                id="leave-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                disabled={!canEditFields}
-              />
+              <Input id="leave-title" value={title} disabled readOnly />
             </div>
             <div className="space-y-1.5">
-              <Label>결재자</Label>
+              <Label>
+                결재자 <RequiredMark />
+              </Label>
               <ApproverCombobox
                 value={approverId}
                 approvers={approvers}
@@ -267,20 +302,33 @@ export function LeaveRequestSheet({
               </Select>
             </div>
             {type === 'FULL' ? (
-              <div className="flex gap-2">
-                <div className="flex-1 space-y-1.5">
-                  <Label>시작일</Label>
-                  <DatePicker value={startDate} onChange={handleStartDateChange} maxDate={maxLeaveDate} disabled={!canEditFields} className="w-full" />
-                </div>
-                <div className="flex-1 space-y-1.5">
-                  <Label>종료일</Label>
-                  <DatePicker value={endDate} onChange={setEndDate} minDate={startDate || undefined} maxDate={maxLeaveDate} disabled={!canEditFields} className="w-full" />
-                </div>
+              <div className="space-y-1.5">
+                <Label>
+                  기간 <RequiredMark />
+                </Label>
+                <DateRangePicker
+                  startValue={startDate}
+                  endValue={endDate}
+                  onChange={handleRangeChange}
+                  minDate={minLeaveDate}
+                  maxDate={maxLeaveDate}
+                  disabled={!canEditFields}
+                  className="w-full"
+                />
               </div>
             ) : (
               <div className="space-y-1.5">
-                <Label>날짜</Label>
-                <DatePicker value={startDate} onChange={handleStartDateChange} maxDate={maxLeaveDate} disabled={!canEditFields} className="w-full" />
+                <Label>
+                  날짜 <RequiredMark />
+                </Label>
+                <DatePicker
+                  value={startDate}
+                  onChange={handleStartDateChange}
+                  minDate={minLeaveDate}
+                  maxDate={maxLeaveDate}
+                  disabled={!canEditFields}
+                  className="w-full"
+                />
               </div>
             )}
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -289,8 +337,8 @@ export function LeaveRequestSheet({
                 <p>{requestedDays}일</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">잔여연차</p>
-                <p>{remaining}일</p>
+                <p className="text-xs text-muted-foreground">{canEditFields ? '신청 후 잔여연차' : '잔여연차'}</p>
+                <p className={projectedRemaining < 0 ? 'text-destructive' : undefined}>{projectedRemaining}일</p>
               </div>
             </div>
             {overlapWarning && (
@@ -299,12 +347,15 @@ export function LeaveRequestSheet({
               </p>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="leave-reason">사유</Label>
+              <Label htmlFor="leave-reason">
+                사유 <RequiredMark />
+              </Label>
               <Textarea
                 id="leave-reason"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 disabled={!canEditFields}
+                className="border-border"
               />
             </div>
             {mode === 'view' && document?.status === 'REJECTED' && document.rejectReason && (
@@ -312,7 +363,7 @@ export function LeaveRequestSheet({
             )}
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
-          <SheetFooter>
+          <DialogFooter>
             {mode === 'create' && (
               <>
                 <Button variant="outline" onClick={() => submitForm('save')} disabled={submitting || !canSubmit}>
@@ -346,9 +397,9 @@ export function LeaveRequestSheet({
                 취소
               </Button>
             )}
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <ConfirmDialog
         open={cancelConfirmOpen}
         onOpenChange={setCancelConfirmOpen}
