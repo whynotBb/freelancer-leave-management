@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import { holidays } from '@/lib/db/schema'
-import { expandHolidayDates } from '@/lib/domain/holidays'
+import { expandHolidayDates, HOLIDAY_PROJECTION_YEARS_AFTER } from '@/lib/domain/holidays'
 import { isUniqueViolation } from '@/lib/db/postgres-errors'
 
 export async function getHolidayDates(): Promise<Set<string>> {
@@ -9,7 +9,7 @@ export async function getHolidayDates(): Promise<Set<string>> {
     .select({ date: holidays.date, name: holidays.name, isRecurring: holidays.isRecurring })
     .from(holidays)
   const currentYear = new Date().getFullYear()
-  return expandHolidayDates(rows, currentYear, 1, 2)
+  return expandHolidayDates(rows, currentYear, 1, HOLIDAY_PROJECTION_YEARS_AFTER)
 }
 
 export interface HolidayListItem {

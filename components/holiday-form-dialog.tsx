@@ -14,6 +14,7 @@ import {
 import { DatePicker } from '@/components/date-picker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { HOLIDAY_PROJECTION_YEARS_AFTER } from '@/lib/domain/holidays'
 
 interface HolidayFormDialogProps {
   open: boolean
@@ -37,6 +38,7 @@ export function HolidayFormDialog({
   // 대화창이 열릴 때마다 폼 상태 초기화
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDate('')
       setName('')
       setIsRecurring(false)
@@ -44,11 +46,6 @@ export function HolidayFormDialog({
   }, [open])
 
   function handleOpenChange(next: boolean) {
-    if (!next) {
-      setDate('')
-      setName('')
-      setIsRecurring(false)
-    }
     onOpenChange(next)
   }
 
@@ -73,7 +70,12 @@ export function HolidayFormDialog({
           </div>
           <div className="space-y-1.5">
             <Label>날짜</Label>
-            <DatePicker value={date || undefined} onChange={setDate} className="w-full" />
+            <DatePicker
+              value={date || undefined}
+              onChange={setDate}
+              maxDate={`${new Date().getFullYear() + HOLIDAY_PROJECTION_YEARS_AFTER}-12-31`}
+              className="w-full"
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="holiday-name">이름</Label>

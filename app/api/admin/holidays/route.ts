@@ -19,7 +19,7 @@ const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
 const bodySchema = z.object({
   date: z.string().regex(DATE_REGEX, '날짜 형식이 올바르지 않습니다.'),
-  name: z.string().min(1),
+  name: z.string().trim().min(1).max(100),
   isRecurring: z.boolean(),
 })
 

@@ -32,6 +32,7 @@ export default function HolidaysPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
   const [deleteSubmitting, setDeleteSubmitting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   function loadHolidays() {
     setLoading(true)
@@ -47,6 +48,7 @@ export default function HolidaysPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadHolidays()
   }, [])
 
@@ -59,6 +61,12 @@ export default function HolidaysPage() {
     const years = new Set(oneTime.map((h) => h.date.slice(0, 4)))
     return [...years].sort((a, b) => (a < b ? 1 : -1))
   }, [oneTime])
+  useEffect(() => {
+    if (yearFilter !== 'all' && !yearOptions.includes(yearFilter)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setYearFilter('all')
+    }
+  }, [yearFilter, yearOptions])
   const filteredOneTime = useMemo(
     () =>
       oneTime
@@ -92,12 +100,16 @@ export default function HolidaysPage() {
   async function handleDelete() {
     if (deleteTargetId === null) return
     setDeleteSubmitting(true)
+    setDeleteError(null)
     try {
       const res = await fetch(`/api/admin/holidays/${deleteTargetId}`, { method: 'DELETE' })
-      if (res.ok) {
-        setDeleteTargetId(null)
-        loadHolidays()
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        setDeleteError(body?.error ?? '삭제에 실패했습니다.')
+        return
       }
+      setDeleteTargetId(null)
+      loadHolidays()
     } finally {
       setDeleteSubmitting(false)
     }
@@ -108,7 +120,16 @@ export default function HolidaysPage() {
       <PageHeader
         title="공휴일 관리"
         description="연차 신청일수 계산에서 제외할 공휴일을 등록합니다. 주말은 자동으로 제외되어 별도 등록이 필요 없습니다."
-        action={<Button onClick={() => setFormOpen(true)}>+ 공휴일 추가</Button>}
+        action={
+          <Button
+            onClick={() => {
+              setFormError(null)
+              setFormOpen(true)
+            }}
+          >
+            + 공휴일 추가
+          </Button>
+        }
       />
 
       <p className="mb-6 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
@@ -254,6 +275,7 @@ export default function HolidaysPage() {
         confirmLabel="삭제"
         onConfirm={handleDelete}
         submitting={deleteSubmitting}
+        error={deleteError}
         destructive
       />
     </div>

@@ -1,6 +1,10 @@
 import { parseISO } from 'date-fns'
 import { toISODate } from './date-utils'
 
+// 공휴일 등록 화면(달력 상한)과 getHolidayDates()의 투영 범위가 서로 다른 값이 되면 등록한
+// 날짜가 실제로는 적용되지 않는 조용한 버그가 생긴다 — 두 곳 모두 이 상수 하나를 쓴다.
+export const HOLIDAY_PROJECTION_YEARS_AFTER = 2
+
 export interface HolidayRow {
   date: string
   name: string
