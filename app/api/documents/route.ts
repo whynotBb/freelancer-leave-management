@@ -76,13 +76,11 @@ export async function POST(request: Request) {
     const holidayDates = await getHolidayDates()
     const requestedDays = calculateRequestedDays(body.startDate, body.endDate, body.type, holidayDates)
 
-    let overlapWarning = false
     if (body.action === 'submit') {
-      const eligibility = await checkSubmissionEligibility(userId, body.startDate, body.endDate, requestedDays)
+      const eligibility = await checkSubmissionEligibility(userId, body.startDate, body.endDate, body.type, requestedDays)
       if (!eligibility.ok) {
         return NextResponse.json({ error: eligibility.error }, { status: 400 })
       }
-      overlapWarning = eligibility.overlapWarning
     }
 
     const created = await createLeaveRequest(
@@ -99,7 +97,7 @@ export async function POST(request: Request) {
       body.action === 'submit' ? 'PENDING' : 'DRAFT'
     )
 
-    return NextResponse.json({ ok: true, id: created.id, requestedDays, overlapWarning })
+    return NextResponse.json({ ok: true, id: created.id, requestedDays })
   } catch (error) {
     const response = toAuthErrorResponse(error)
     if (response) return response

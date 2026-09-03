@@ -93,7 +93,6 @@ export function LeaveRequestSheet({
   const [endDate, setEndDate] = useState('')
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [overlapWarning, setOverlapWarning] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -112,7 +111,6 @@ export function LeaveRequestSheet({
   useEffect(() => {
     if (!open) return
     setError(null)
-    setOverlapWarning(false)
     setEditing(false)
     if (mode === 'create') {
       setApproverId(defaultApproverId)
@@ -196,13 +194,10 @@ export function LeaveRequestSheet({
         setError(data?.error ?? '처리에 실패했습니다.')
         return
       }
-      // 겹침 경고가 있으면 배너를 보여줘야 하므로 모달을 닫지 않는다. 경고가 없는
-      // 저장/제출은 성공 즉시 닫아 "임시저장"을 반복 클릭해 중복 DRAFT가 생기는 것을 막는다.
-      if (data?.overlapWarning) {
-        setOverlapWarning(true)
-      } else {
-        onOpenChange(false)
-      }
+      // 같은 기간 충돌은 이제 서버에서 에러로 차단되므로(!res.ok 분기), 여기 도달했다면
+      // 저장/제출 모두 성공이다 — "임시저장"을 반복 클릭해 중복 DRAFT가 생기는 것을 막기
+      // 위해 성공 즉시 닫는다.
+      onOpenChange(false)
       onSaved()
     } finally {
       setSubmitting(false)
@@ -257,15 +252,15 @@ export function LeaveRequestSheet({
     <>
       <Dialog open={open} onOpenChange={handleOpenChange} disablePointerDismissal>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[600px]">
+          {/* 이 모달은 제목 아래에 부제(설명) 문구가 있고 그 아래로 폼 본문이 이어지는 구조라,
+              구분선이 "제목" 바로 아래가 아니라 "제목+부제" 전체 아래(본문 시작 전)에 와야
+              한다 — 기본 DialogTitle의 구분선을 지우고 헤더 전체에 구분선을 준다. */}
           <DialogHeader className="border-b border-border pb-4">
-            <DialogTitle>{mode === 'create' ? '연차 신청' : title}</DialogTitle>
-            <DialogDescription>
-              {mode === 'view' && document ? (
-                <StatusBadge status={document.status} />
-              ) : (
-                '결재자를 지정하고 연차를 신청합니다.'
-              )}
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-2 border-b-0 pb-0">
+              {mode === 'view' && document && <StatusBadge status={document.status} />}
+              <span>{mode === 'create' ? '연차 신청' : title}</span>
+            </DialogTitle>
+            {mode === 'create' && <DialogDescription>결재자를 지정하고 연차를 신청합니다.</DialogDescription>}
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
@@ -341,11 +336,6 @@ export function LeaveRequestSheet({
                 <p className={projectedRemaining < 0 ? 'text-destructive' : undefined}>{projectedRemaining}일</p>
               </div>
             </div>
-            {overlapWarning && (
-              <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                같은 기간에 이미 대기 또는 승인된 신청이 있습니다.
-              </p>
-            )}
             <div className="space-y-1.5">
               <Label htmlFor="leave-reason">
                 사유 <RequiredMark />
@@ -355,7 +345,6 @@ export function LeaveRequestSheet({
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 disabled={!canEditFields}
-                className="border-border"
               />
             </div>
             {mode === 'view' && document?.status === 'REJECTED' && document.rejectReason && (

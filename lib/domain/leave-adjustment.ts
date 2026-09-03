@@ -34,8 +34,8 @@ export function buildGrantAdjustmentRow(params: {
   }
 }
 
-// type: 'ADJUSTMENT' 행은 실제 휴가 신청이 아니다. 향후 hasOverlappingActiveRequest(휴가 신청
-// 중복 검사)에 leaveRequests 데이터를 넘기는 코드를 새로 작성할 때는 이 타입의 행을 반드시
+// type: 'ADJUSTMENT' 행은 실제 휴가 신청이 아니다. 향후 hasConflictingActiveRequest(휴가 신청
+// 충돌 검사)에 leaveRequests 데이터를 넘기는 코드를 새로 작성할 때는 이 타입의 행을 반드시
 // 제외하고 넘겨야 한다 — 이미 필터링된 배열을 받는 순수 함수라 이 필터링은 호출부의 책임이다.
 export interface UsageAdjustmentRow {
   userId: number

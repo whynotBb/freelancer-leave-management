@@ -1,24 +1,49 @@
 import { describe, expect, it } from 'vitest'
-import { hasOverlappingActiveRequest, isBeyondBackdateLimit } from './leave-validation'
+import { hasConflictingActiveRequest, isBeyondBackdateLimit } from './leave-validation'
 
-describe('hasOverlappingActiveRequest', () => {
-  it('대기/승인 상태 문서와 기간이 겹치면 true', () => {
-    const existing = [{ startDate: '2026-08-24', endDate: '2026-08-26', status: 'PENDING' }]
-    expect(hasOverlappingActiveRequest(existing, '2026-08-25', '2026-08-27')).toBe(true)
+describe('hasConflictingActiveRequest', () => {
+  it('대기/승인 상태의 같은 유형 문서와 기간이 겹치면 true', () => {
+    const existing = [{ startDate: '2026-08-24', endDate: '2026-08-26', status: 'PENDING', type: 'FULL' as const }]
+    expect(hasConflictingActiveRequest(existing, '2026-08-25', '2026-08-27', 'FULL')).toBe(true)
   })
 
   it('반려/취소/임시저장 상태는 겹쳐도 무시한다', () => {
     const existing = [
-      { startDate: '2026-08-24', endDate: '2026-08-26', status: 'REJECTED' },
-      { startDate: '2026-08-24', endDate: '2026-08-26', status: 'CANCELED' },
-      { startDate: '2026-08-24', endDate: '2026-08-26', status: 'DRAFT' },
+      { startDate: '2026-08-24', endDate: '2026-08-26', status: 'REJECTED', type: 'FULL' as const },
+      { startDate: '2026-08-24', endDate: '2026-08-26', status: 'CANCELED', type: 'FULL' as const },
+      { startDate: '2026-08-24', endDate: '2026-08-26', status: 'DRAFT', type: 'FULL' as const },
     ]
-    expect(hasOverlappingActiveRequest(existing, '2026-08-25', '2026-08-27')).toBe(false)
+    expect(hasConflictingActiveRequest(existing, '2026-08-25', '2026-08-27', 'FULL')).toBe(false)
   })
 
   it('기간이 겹치지 않으면 false', () => {
-    const existing = [{ startDate: '2026-08-24', endDate: '2026-08-26', status: 'APPROVED' }]
-    expect(hasOverlappingActiveRequest(existing, '2026-08-27', '2026-08-28')).toBe(false)
+    const existing = [{ startDate: '2026-08-24', endDate: '2026-08-26', status: 'APPROVED', type: 'FULL' as const }]
+    expect(hasConflictingActiveRequest(existing, '2026-08-27', '2026-08-28', 'FULL')).toBe(false)
+  })
+
+  it('같은 날짜라도 오전 반차끼리 겹치면 true', () => {
+    const existing = [{ startDate: '2026-08-24', endDate: '2026-08-24', status: 'PENDING', type: 'AM_HALF' as const }]
+    expect(hasConflictingActiveRequest(existing, '2026-08-24', '2026-08-24', 'AM_HALF')).toBe(true)
+  })
+
+  it('같은 날짜라도 오후 반차끼리 겹치면 true', () => {
+    const existing = [{ startDate: '2026-08-24', endDate: '2026-08-24', status: 'APPROVED', type: 'PM_HALF' as const }]
+    expect(hasConflictingActiveRequest(existing, '2026-08-24', '2026-08-24', 'PM_HALF')).toBe(true)
+  })
+
+  it('같은 날짜의 오전 반차와 오후 반차는 서로 겹치지 않는다', () => {
+    const existing = [{ startDate: '2026-08-24', endDate: '2026-08-24', status: 'PENDING', type: 'AM_HALF' as const }]
+    expect(hasConflictingActiveRequest(existing, '2026-08-24', '2026-08-24', 'PM_HALF')).toBe(false)
+  })
+
+  it('기존이 연차(FULL)면 반차와 겹쳐도 차단된다', () => {
+    const existing = [{ startDate: '2026-08-24', endDate: '2026-08-26', status: 'PENDING', type: 'FULL' as const }]
+    expect(hasConflictingActiveRequest(existing, '2026-08-25', '2026-08-25', 'AM_HALF')).toBe(true)
+  })
+
+  it('새 신청이 연차(FULL)면 기존 반차와 겹쳐도 차단된다', () => {
+    const existing = [{ startDate: '2026-08-25', endDate: '2026-08-25', status: 'APPROVED', type: 'PM_HALF' as const }]
+    expect(hasConflictingActiveRequest(existing, '2026-08-24', '2026-08-26', 'FULL')).toBe(true)
   })
 })
 

@@ -123,11 +123,12 @@ export function DateRangePicker({
   maxDate,
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false)
-  // react-day-picker의 range 선택은 클릭 한 번만으로도 이미 완결된 1일짜리 range({from,to}가
-  // 모두 채워짐)를 돌려주므로, range.to 유무만으로는 "시작일만 찍었는지 종료일까지 찍었는지"를
-  // 구분할 수 없다. 팝오버를 여는 시점에 초기화되는 이 플래그로 "이번에 연 뒤 몇 번째 클릭인지"를
-  // 직접 추적해, 첫 클릭에서는 닫지 않고 두 번째 클릭에서만 닫는다(같은 날을 두 번 찍으면 1일 선택).
-  const [pendingSecondClick, setPendingSecondClick] = useState(false)
+  // react-day-picker의 onSelect에 맡기면 "이미 완결된 1일짜리 range를 같은 날짜로 다시
+  // 클릭"했을 때 기본 동작(required: false)이 선택을 통째로 해제(range: undefined)해버려서,
+  // 두 번째 클릭으로 하루짜리 신청을 확정하려는 상호작용이 막힌다. 그래서 range 판정을
+  // 라이브러리에 맡기지 않고 onDayClick으로 직접 "이번에 연 뒤 첫 클릭인지 두 번째 클릭인지"를
+  // 추적해 시작일/종료일을 구성한다.
+  const [pendingStart, setPendingStart] = useState<string | null>(null)
   const selectedRange: DateRange | undefined = startValue
     ? { from: parseISO(startValue), to: endValue ? parseISO(endValue) : undefined }
     : undefined
@@ -154,7 +155,7 @@ export function DateRangePicker({
       onOpenChange={(next) => {
         if (disabled) return
         setOpen(next)
-        if (next) setPendingSecondClick(false)
+        if (next) setPendingStart(null)
       }}
     >
       <PopoverTrigger asChild>
@@ -185,15 +186,19 @@ export function DateRangePicker({
           startMonth={new Date(startYear, 0)}
           endMonth={new Date(endYear, 11)}
           disabled={disabledMatchers.length > 0 ? disabledMatchers : undefined}
-          onSelect={(range) => {
-            if (!range?.from) return
-            onChange(format(range.from, 'yyyy-MM-dd'), format(range.to ?? range.from, 'yyyy-MM-dd'))
-            if (pendingSecondClick) {
-              setOpen(false)
-              setPendingSecondClick(false)
-            } else {
-              setPendingSecondClick(true)
+          onSelect={() => {}}
+          onDayClick={(day) => {
+            const clicked = format(day, 'yyyy-MM-dd')
+            if (!pendingStart) {
+              setPendingStart(clicked)
+              onChange(clicked, clicked)
+              return
             }
+            const start = clicked < pendingStart ? clicked : pendingStart
+            const end = clicked < pendingStart ? pendingStart : clicked
+            onChange(start, end)
+            setPendingStart(null)
+            setOpen(false)
           }}
         />
       </PopoverContent>

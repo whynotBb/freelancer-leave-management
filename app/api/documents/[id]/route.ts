@@ -102,7 +102,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ ok: true, status: 'DRAFT', requestedDays })
     }
 
-    const eligibility = await checkSubmissionEligibility(userId, body.startDate, body.endDate, requestedDays)
+    const eligibility = await checkSubmissionEligibility(userId, body.startDate, body.endDate, body.type, requestedDays)
     if (!eligibility.ok) {
       return NextResponse.json({ error: eligibility.error }, { status: 400 })
     }
@@ -115,7 +115,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         ok: true,
         status: result.status,
         requestedDays,
-        overlapWarning: eligibility.overlapWarning,
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : '처리할 수 없습니다.'

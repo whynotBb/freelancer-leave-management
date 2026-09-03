@@ -4,7 +4,7 @@ import { db } from '@/lib/db/client'
 import { leaveGrants, leaveRequests, users } from '@/lib/db/schema'
 import { getLeaveBalance } from '@/lib/db/leave-adjustments'
 import { applyTransition, type LeaveRequestStatus } from '@/lib/domain/leave-workflow'
-import { hasOverlappingActiveRequest, isBeyondBackdateLimit } from '@/lib/domain/leave-validation'
+import { hasConflictingActiveRequest, isBeyondBackdateLimit, type LeaveRequestType } from '@/lib/domain/leave-validation'
 import {
   buildMyDocumentTimeline,
   type MyDocumentEntry,
@@ -97,16 +97,23 @@ export async function getMyDocumentTimeline(userId: number): Promise<MyDocumentE
   })
 }
 
-// hasOverlappingActiveRequest(기존, PENDING/APPROVED만 걸러 비교)에 넘길 원본 목록이다.
+// hasConflictingActiveRequest(기존, PENDING/APPROVED만 걸러 비교)에 넘길 원본 목록이다.
 // type='ADJUSTMENT'(관리자 수동 조정 기록, 실제 신청이 아님)만 제외하고 FULL/AM_HALF/PM_HALF는
-// 전부 포함한다 — 반차도 기간 중복 검사 대상이다.
+// 전부 포함한다 — 반차도 기간 중복 검사 대상이다. type도 함께 내려줘야 오전/오후 반차처럼
+// 같은 날짜라도 유형이 다르면 충돌로 보지 않는 판정이 가능하다.
 export async function getOwnActiveRequestRanges(
   userId: number
-): Promise<{ startDate: string; endDate: string; status: string }[]> {
+): Promise<{ startDate: string; endDate: string; status: string; type: LeaveRequestType }[]> {
   return db
-    .select({ startDate: leaveRequests.startDate, endDate: leaveRequests.endDate, status: leaveRequests.status })
+    .select({
+      startDate: leaveRequests.startDate,
+      endDate: leaveRequests.endDate,
+      status: leaveRequests.status,
+      type: leaveRequests.type,
+    })
     .from(leaveRequests)
     .where(and(eq(leaveRequests.userId, userId), ne(leaveRequests.type, 'ADJUSTMENT')))
+    .then((rows) => rows.map((r) => ({ ...r, type: r.type as LeaveRequestType })))
 }
 
 export interface LeaveRequestFields {
@@ -202,13 +209,16 @@ export async function transitionOwnLeaveRequest(
 }
 
 // POST(신규 제출)와 PATCH(기존 DRAFT 제출) 양쪽에서 재사용하는 제출 시점 검증 — 잔여연차
-// 초과면 차단(에러), 기간이 겹치면 경고만 반환하고 차단하지 않는다(원 설계 문서 6장).
+// 초과, 기간 충돌(같은 날짜에 연차나 같은 반차 유형이 이미 대기/승인 상태) 모두 차단(에러).
+// 오전 반차와 오후 반차처럼 같은 날짜라도 유형이 다르면 정상적으로 나눠 신청하는 조합이라
+// 충돌로 보지 않는다(hasConflictingActiveRequest 참고).
 export async function checkSubmissionEligibility(
   userId: number,
   startDate: string,
   endDate: string,
+  type: LeaveRequestType,
   requestedDays: number
-): Promise<{ ok: true; overlapWarning: boolean } | { ok: false; error: string }> {
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const [me] = await db.select({ hireDate: users.hireDate }).from(users).where(eq(users.id, userId))
   if (!me?.hireDate) {
     return { ok: false, error: '입사일이 등록되지 않아 신청할 수 없습니다.' }
@@ -222,6 +232,8 @@ export async function checkSubmissionEligibility(
     return { ok: false, error: '잔여 연차를 초과하여 제출할 수 없습니다.' }
   }
   const existing = await getOwnActiveRequestRanges(userId)
-  const overlapWarning = hasOverlappingActiveRequest(existing, startDate, endDate)
-  return { ok: true, overlapWarning }
+  if (hasConflictingActiveRequest(existing, startDate, endDate, type)) {
+    return { ok: false, error: '같은 기간에 이미 대기 중이거나 승인된 신청이 있어 제출할 수 없습니다.' }
+  }
+  return { ok: true }
 }
