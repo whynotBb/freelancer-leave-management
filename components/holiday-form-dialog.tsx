@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -33,6 +33,15 @@ export function HolidayFormDialog({
   const [date, setDate] = useState('')
   const [name, setName] = useState('')
   const [isRecurring, setIsRecurring] = useState(false)
+
+  // 대화창이 열릴 때마다 폼 상태 초기화
+  useEffect(() => {
+    if (open) {
+      setDate('')
+      setName('')
+      setIsRecurring(false)
+    }
+  }, [open])
 
   function handleOpenChange(next: boolean) {
     if (!next) {
