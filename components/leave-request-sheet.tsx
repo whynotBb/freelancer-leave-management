@@ -251,18 +251,19 @@ export function LeaveRequestSheet({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange} disablePointerDismissal>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[600px]">
+        <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-[600px]">
           {/* 이 모달은 제목 아래에 부제(설명) 문구가 있고 그 아래로 폼 본문이 이어지는 구조라,
               구분선이 "제목" 바로 아래가 아니라 "제목+부제" 전체 아래(본문 시작 전)에 와야
               한다 — 기본 DialogTitle의 구분선을 지우고 헤더 전체에 구분선을 준다. */}
-          <DialogHeader className="border-b border-border pb-4">
-            <DialogTitle className="flex items-center gap-2 border-b-0 pb-0">
-              {mode === 'view' && document && <StatusBadge status={document.status} />}
+          <DialogHeader className="shrink-0 border-b border-border pb-4">
+            <DialogTitle className="flex items-start gap-2 border-b-0 pb-0 leading-snug">
+              {mode === 'view' && document && <StatusBadge status={document.status} className="mt-0.5 shrink-0" />}
               <span>{mode === 'create' ? '연차 신청' : title}</span>
             </DialogTitle>
             {mode === 'create' && <DialogDescription>결재자를 지정하고 연차를 신청합니다.</DialogDescription>}
           </DialogHeader>
-          <div className="space-y-4">
+          {/* 내용이 넘칠 때 헤더/푸터는 고정하고 이 영역만 스크롤되도록 분리한다. */}
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto py-1">
             <div className="space-y-1.5">
               <Label>신청인</Label>
               <Input value={requesterName} disabled readOnly />
@@ -352,7 +353,7 @@ export function LeaveRequestSheet({
             )}
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             {mode === 'create' && (
               <>
                 <Button variant="outline" onClick={() => submitForm('save')} disabled={submitting || !canSubmit}>
