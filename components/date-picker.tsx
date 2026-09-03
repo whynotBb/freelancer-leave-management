@@ -17,6 +17,7 @@ interface DatePickerProps {
   disabled?: boolean
   minDate?: string
   maxDate?: string
+  holidayDates?: Set<string>
 }
 
 // 키보드로 직접 입력하지 못하도록 텍스트 인풋 대신 버튼 트리거 + 캘린더 팝오버로 구성한다.
@@ -38,6 +39,7 @@ export function DatePicker({
   disabled,
   minDate,
   maxDate,
+  holidayDates,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const selected = value ? parseISO(value) : undefined
@@ -88,6 +90,14 @@ export function DatePicker({
           startMonth={new Date(startYear, 0)}
           endMonth={new Date(endYear, 11)}
           disabled={disabledMatchers.length > 0 ? disabledMatchers : undefined}
+          modifiers={{
+            saturday: (date) => date.getDay() === 6,
+            sundayOrHoliday: (date) => date.getDay() === 0 || (holidayDates?.has(format(date, 'yyyy-MM-dd')) ?? false),
+          }}
+          modifiersClassNames={{
+            saturday: 'text-blue-600 dark:text-blue-400',
+            sundayOrHoliday: 'text-red-600 dark:text-red-400',
+          }}
           onSelect={(date) => {
             if (!date) return
             onChange(format(date, 'yyyy-MM-dd'))
@@ -108,6 +118,7 @@ interface DateRangePickerProps {
   disabled?: boolean
   minDate?: string
   maxDate?: string
+  holidayDates?: Set<string>
 }
 
 // 연차(전일) 신청은 시작일/종료일을 한 번에 고르는 게 자연스러워, 별도 트리거 2개 대신
@@ -121,6 +132,7 @@ export function DateRangePicker({
   disabled,
   minDate,
   maxDate,
+  holidayDates,
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false)
   // react-day-picker의 onSelect에 맡기면 "이미 완결된 1일짜리 range를 같은 날짜로 다시
@@ -186,6 +198,14 @@ export function DateRangePicker({
           startMonth={new Date(startYear, 0)}
           endMonth={new Date(endYear, 11)}
           disabled={disabledMatchers.length > 0 ? disabledMatchers : undefined}
+          modifiers={{
+            saturday: (date) => date.getDay() === 6,
+            sundayOrHoliday: (date) => date.getDay() === 0 || (holidayDates?.has(format(date, 'yyyy-MM-dd')) ?? false),
+          }}
+          modifiersClassNames={{
+            saturday: 'text-blue-600 dark:text-blue-400',
+            sundayOrHoliday: 'text-red-600 dark:text-red-400',
+          }}
           onSelect={() => {}}
           onDayClick={(day) => {
             const clicked = format(day, 'yyyy-MM-dd')

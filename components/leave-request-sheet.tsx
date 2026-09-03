@@ -309,6 +309,7 @@ export function LeaveRequestSheet({
                   minDate={minLeaveDate}
                   maxDate={maxLeaveDate}
                   disabled={!canEditFields}
+                  holidayDates={holidaySet}
                   className="w-full"
                 />
               </div>
@@ -323,6 +324,7 @@ export function LeaveRequestSheet({
                   minDate={minLeaveDate}
                   maxDate={maxLeaveDate}
                   disabled={!canEditFields}
+                  holidayDates={holidaySet}
                   className="w-full"
                 />
               </div>
