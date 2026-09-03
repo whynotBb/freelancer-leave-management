@@ -59,6 +59,7 @@ export const holidays = pgTable('holidays', {
   id: serial('id').primaryKey(),
   date: date('date', { mode: 'string' }).notNull().unique(),
   name: varchar('name', { length: 100 }).notNull(),
+  isRecurring: boolean('is_recurring').notNull().default(false),
 })
 
 export const notifications = pgTable('notifications', {

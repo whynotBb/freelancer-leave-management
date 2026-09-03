@@ -50,6 +50,13 @@
       "when": 1787903405548,
       "tag": "0006_password-reset",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788410208230,
+      "tag": "0007_holiday-recurrence",
+      "breakpoints": true
     }
   ]
 }
