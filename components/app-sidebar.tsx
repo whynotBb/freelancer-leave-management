@@ -19,6 +19,7 @@ import {
   UserCogIcon,
   UserMinusIcon,
   HistoryIcon,
+  CalendarDaysIcon,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -70,6 +71,7 @@ const COMMON_LINKS = [
 const ADMIN_LINKS = [
   { href: '/admin/users-manage', label: '사용자 관리', icon: UserCogIcon, roles: ['SUPER_ADMIN'] },
   { href: '/admin/users', label: '프리랜서 정보 관리', icon: UsersIcon, roles: ['SUPER_ADMIN', 'APPROVER'] },
+  { href: '/admin/holidays', label: '공휴일 관리', icon: CalendarDaysIcon, roles: ['SUPER_ADMIN'] },
   { href: '/admin/departures', label: '퇴사자 관리', icon: UserMinusIcon, roles: ['SUPER_ADMIN'] },
   { href: '/admin/history', label: '변경 이력', icon: HistoryIcon, roles: ['SUPER_ADMIN'] },
 ]
