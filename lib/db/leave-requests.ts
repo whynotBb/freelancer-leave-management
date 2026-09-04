@@ -240,3 +240,87 @@ export async function checkSubmissionEligibility(
   }
   return { ok: true }
 }
+
+export interface ApprovalQueueRow {
+  id: number
+  title: string
+  startDate: string
+  endDate: string
+  type: 'FULL' | 'AM_HALF' | 'PM_HALF'
+  requestedDays: number
+  status: LeaveRequestStatus
+  reason: string
+  rejectReason: string | null
+  submittedAt: string | null
+  requesterName: string
+}
+
+// 본인이 결재자로 지정된 문서 전체를 반환한다. type='ADJUSTMENT'(관리자 수동 조정 기록)는
+// 실제 결재 대상이 아니므로 제외한다. 대기 상태를 항상 먼저 보여주고 그다음 제출일 역순으로
+// 정렬해, 처리해야 할 문서를 목록 상단에서 놓치지 않도록 한다.
+export async function getApprovalQueue(approverId: number): Promise<ApprovalQueueRow[]> {
+  const requester = alias(users, 'requester')
+  const rows = await db
+    .select({
+      id: leaveRequests.id,
+      title: leaveRequests.title,
+      startDate: leaveRequests.startDate,
+      endDate: leaveRequests.endDate,
+      type: leaveRequests.type,
+      requestedDays: leaveRequests.requestedDays,
+      status: leaveRequests.status,
+      reason: leaveRequests.reason,
+      rejectReason: leaveRequests.rejectReason,
+      submittedAt: leaveRequests.submittedAt,
+      requesterName: requester.name,
+    })
+    .from(leaveRequests)
+    .innerJoin(requester, eq(leaveRequests.userId, requester.id))
+    .where(and(eq(leaveRequests.approverId, approverId), ne(leaveRequests.type, 'ADJUSTMENT')))
+
+  return rows
+    .map(
+      (r): ApprovalQueueRow => ({
+        ...r,
+        type: r.type as ApprovalQueueRow['type'],
+        status: r.status as LeaveRequestStatus,
+        submittedAt: r.submittedAt ? r.submittedAt.toISOString() : null,
+      })
+    )
+    .sort((a, b) => {
+      if (a.status === 'PENDING' && b.status !== 'PENDING') return -1
+      if (a.status !== 'PENDING' && b.status === 'PENDING') return 1
+      return (b.submittedAt ?? '').localeCompare(a.submittedAt ?? '')
+    })
+}
+
+export async function getLeaveRequestForApprover(id: number, approverId: number) {
+  const [row] = await db
+    .select()
+    .from(leaveRequests)
+    .where(and(eq(leaveRequests.id, id), eq(leaveRequests.approverId, approverId)))
+  return row ?? null
+}
+
+// applyTransition(기존 순수 함수)이 상태 전이 자체의 유효성(PENDING→APPROVED/REJECTED만 허용)을
+// 검증하고, 잘못된 전이면 Error를 던진다 — 호출부(API 라우트)가 그 Error를 잡아 400으로
+// 응답한다. 반환값의 userId/title은 승인/반려 알림 생성 시 재조회 없이 바로 쓰기 위함이다.
+export async function transitionLeaveRequestAsApprover(
+  id: number,
+  approverId: number,
+  action: 'APPROVE' | 'REJECT',
+  rejectReason?: string
+): Promise<{ status: LeaveRequestStatus; userId: number; title: string } | null> {
+  const row = await getLeaveRequestForApprover(id, approverId)
+  if (!row) return null
+  const nextStatus = applyTransition(row.status as LeaveRequestStatus, action, 'APPROVER')
+  await db
+    .update(leaveRequests)
+    .set({
+      status: nextStatus,
+      processedAt: new Date(),
+      rejectReason: action === 'REJECT' ? (rejectReason ?? null) : row.rejectReason,
+    })
+    .where(eq(leaveRequests.id, id))
+  return { status: nextStatus, userId: row.userId, title: row.title }
+}
