@@ -15,8 +15,12 @@ interface DateRangeViewProps {
 }
 
 // components/date-picker.tsx의 DateRangePicker와 같은 Popover+Calendar 패턴을 쓰되, 조회
-// 전용이라 onDayClick/onSelect로 값을 바꾸는 로직이 없다 — selected가 매 렌더 동일한 값으로
-// 고정돼 있어 날짜를 클릭해도 아무 것도 바뀌지 않는다.
+// 전용이라 onDayClick/onSelect로 값을 바꾸는 로직이 없다. 그것만으로는 각 날짜 버튼이 여전히
+// 클릭 가능한 것처럼 보이고 호버/포커스 상호작용도 그대로 남으므로, disabled={true}로 모든
+// 날짜의 클릭·키보드 상호작용 자체를 막는다(월 이동/드롭다운 내비게이션은 disabled 대상이
+// 아니라 그대로 동작). disabled 기본 스타일(회색 처리)은 하이라이트된 기간을 흐리게 만들어
+// 열람 목적에 맞지 않으므로, 이 컴포넌트에서만 classNames.disabled를 비워 시각적으로는
+// 원래 하이라이트 그대로 보이게 한다.
 export function DateRangeView({ startDate, endDate, className }: DateRangeViewProps) {
   const [open, setOpen] = useState(false)
   const from = parseISO(startDate)
@@ -47,6 +51,8 @@ export function DateRangeView({ startDate, endDate, className }: DateRangeViewPr
           numberOfMonths={startDate === endDate ? 1 : 2}
           defaultMonth={from}
           selected={{ from, to }}
+          disabled={true}
+          classNames={{ disabled: '' }}
         />
       </PopoverContent>
     </Popover>
