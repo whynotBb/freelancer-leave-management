@@ -126,18 +126,16 @@ export function ApprovalRequestSheet({ open, onOpenChange, document, onProcessed
             )}
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
-          <DialogFooter className="shrink-0">
-            {document.status === 'PENDING' && (
-              <>
-                <Button variant="outline" onClick={() => setRejectDialogOpen(true)} disabled={submitting}>
-                  반려
-                </Button>
-                <Button onClick={() => setApproveConfirmOpen(true)} disabled={submitting}>
-                  승인
-                </Button>
-              </>
-            )}
-          </DialogFooter>
+          {document.status === 'PENDING' && (
+            <DialogFooter className="shrink-0">
+              <Button variant="outline" onClick={() => setRejectDialogOpen(true)} disabled={submitting}>
+                반려
+              </Button>
+              <Button onClick={() => setApproveConfirmOpen(true)} disabled={submitting}>
+                승인
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
       <ConfirmDialog
