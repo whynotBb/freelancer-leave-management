@@ -33,6 +33,7 @@ export interface ApprovalDocument {
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED'
   reason: string
   rejectReason: string | null
+  requesterRemaining: number | null
 }
 
 interface ApprovalRequestSheetProps {
@@ -50,6 +51,15 @@ export function ApprovalRequestSheet({ open, onOpenChange, document, onProcessed
   const [error, setError] = useState<string | null>(null)
 
   if (!document) return null
+
+  // 승인 시 신청인의 잔여연차가 마이너스가 되는 경우, 승인 자체를 막지는 않되(결재자 재량)
+  // 확인 다이얼로그에서 한 번 더 인지시킨다. requesterRemaining은 이 문서의 신청일수가 아직
+  // 반영되지 않은 "현재" 잔여연차이므로, 신청일수가 그보다 크면 승인 후 마이너스가 된다.
+  const wouldGoNegative =
+    document.requesterRemaining !== null && document.requestedDays > document.requesterRemaining
+  const approveDescription = wouldGoNegative
+    ? `"${document.title}" 신청을 승인하시겠습니까? 승인 후에는 되돌릴 수 없습니다. ⚠️ 승인 시 잔여연차가 ${document.requesterRemaining! - document.requestedDays}일이 됩니다.`
+    : `"${document.title}" 신청을 승인하시겠습니까? 승인 후에는 되돌릴 수 없습니다.`
 
   async function process(action: 'approve' | 'reject') {
     setError(null)
@@ -141,7 +151,7 @@ export function ApprovalRequestSheet({ open, onOpenChange, document, onProcessed
         open={approveConfirmOpen}
         onOpenChange={setApproveConfirmOpen}
         title="휴가 신청 승인"
-        description={`"${document.title}" 신청을 승인하시겠습니까? 승인 후에는 되돌릴 수 없습니다.`}
+        description={approveDescription}
         confirmLabel="승인"
         onConfirm={() => process('approve')}
         submitting={submitting}

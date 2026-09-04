@@ -253,6 +253,11 @@ export interface ApprovalQueueRow {
   rejectReason: string | null
   submittedAt: string | null
   requesterName: string
+  // 승인 시점 기준 신청인의 현재 잔여연차(이 문서의 신청일수는 아직 반영 전 — PENDING은
+  // getLeaveBalance의 사용량 집계에 포함되지 않는다). 결재자가 승인 확인 시 "승인하면
+  // 마이너스가 되는지"를 판단할 수 있도록 PENDING 행에만 계산해 내려준다. 입사일이 없거나
+  // PENDING이 아니면 null.
+  requesterRemaining: number | null
 }
 
 // 본인이 결재자로 지정된 문서 전체를 반환한다. type='ADJUSTMENT'(관리자 수동 조정 기록)는
@@ -274,7 +279,9 @@ export async function getApprovalQueue(approverId: number): Promise<ApprovalQueu
       reason: leaveRequests.reason,
       rejectReason: leaveRequests.rejectReason,
       submittedAt: leaveRequests.submittedAt,
+      requesterId: requester.id,
       requesterName: requester.name,
+      requesterHireDate: requester.hireDate,
     })
     .from(leaveRequests)
     .innerJoin(requester, eq(leaveRequests.userId, requester.id))
@@ -286,15 +293,37 @@ export async function getApprovalQueue(approverId: number): Promise<ApprovalQueu
       )
     )
 
-  return rows
-    .map(
-      (r): ApprovalQueueRow => ({
-        ...r,
-        type: r.type as ApprovalQueueRow['type'],
-        status: r.status as Exclude<LeaveRequestStatus, 'DRAFT'>,
-        submittedAt: r.submittedAt ? r.submittedAt.toISOString() : null,
-      })
-    )
+  const today = new Date().toISOString().slice(0, 10)
+  // 같은 신청인의 대기 문서가 여러 건이어도 잔여연차 계산(DB 조회 포함)은 한 번만 하도록 캐시한다.
+  const remainingByRequester = new Map<number, number>()
+
+  const mapped: ApprovalQueueRow[] = []
+  for (const r of rows) {
+    let requesterRemaining: number | null = null
+    if (r.status === 'PENDING' && r.requesterHireDate) {
+      if (!remainingByRequester.has(r.requesterId)) {
+        const balance = await getLeaveBalance(r.requesterId, r.requesterHireDate, today)
+        remainingByRequester.set(r.requesterId, balance.remaining)
+      }
+      requesterRemaining = remainingByRequester.get(r.requesterId)!
+    }
+    mapped.push({
+      id: r.id,
+      title: r.title,
+      startDate: r.startDate,
+      endDate: r.endDate,
+      type: r.type as ApprovalQueueRow['type'],
+      requestedDays: r.requestedDays,
+      status: r.status as Exclude<LeaveRequestStatus, 'DRAFT'>,
+      reason: r.reason,
+      rejectReason: r.rejectReason,
+      submittedAt: r.submittedAt ? r.submittedAt.toISOString() : null,
+      requesterName: r.requesterName,
+      requesterRemaining,
+    })
+  }
+
+  return mapped
     .sort((a, b) => {
       if (a.status === 'PENDING' && b.status !== 'PENDING') return -1
       if (a.status !== 'PENDING' && b.status === 'PENDING') return 1

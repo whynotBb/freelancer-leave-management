@@ -24,6 +24,7 @@ interface ApprovalRow {
   rejectReason: string | null
   submittedAt: string | null
   requesterName: string
+  requesterRemaining: number | null
 }
 
 const TYPE_LABEL: Record<'FULL' | 'AM_HALF' | 'PM_HALF', string> = {
@@ -96,6 +97,7 @@ export default function ApprovalsPage() {
       status: row.status,
       reason: row.reason,
       rejectReason: row.rejectReason,
+      requesterRemaining: row.requesterRemaining,
     })
     setSheetOpen(true)
   }
