@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { StatusBadge } from '@/components/status-badge'
+import { DateRangeView } from '@/components/date-range-view'
 
 const TYPE_LABEL: Record<'FULL' | 'AM_HALF' | 'PM_HALF', string> = {
   FULL: '연차',
@@ -114,15 +115,7 @@ export function ApprovalRequestSheet({ open, onOpenChange, document, onProcessed
             </div>
             <div className="space-y-1.5">
               <Label>기간</Label>
-              <Input
-                value={
-                  document.startDate === document.endDate
-                    ? document.startDate
-                    : `${document.startDate} ~ ${document.endDate}`
-                }
-                disabled
-                readOnly
-              />
+              <DateRangeView startDate={document.startDate} endDate={document.endDate} />
             </div>
             <div className="space-y-1.5">
               <Label>사유</Label>
