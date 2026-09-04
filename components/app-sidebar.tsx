@@ -59,11 +59,10 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 
-// 공통 메뉴: 아직 Task 18~22가 구현되지 않아 대상 페이지가 없다(임시 404, 정상 — 브리프 참고).
 const COMMON_LINKS = [
   { href: '/dashboard', label: '대시보드', icon: LayoutDashboardIcon },
   { href: '/documents', label: '내 문서', icon: FileTextIcon, roles: ['FREELANCER'] },
-  { href: '/approvals', label: '결재함', icon: InboxIcon },
+  { href: '/approvals', label: '결재함', icon: InboxIcon, roles: ['SUPER_ADMIN', 'APPROVER'] },
 ]
 
 // 관리자 전용 메뉴: 실제로 페이지가 존재하는 항목만 나열한다. 각 항목의 roles가 현재
