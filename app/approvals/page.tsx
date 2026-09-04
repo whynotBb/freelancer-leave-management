@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { SearchIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { LoadingSpinner } from '@/components/loading-spinner'
 import { PageHeader } from '@/components/page-header'
@@ -33,8 +33,16 @@ const TYPE_LABEL: Record<'FULL' | 'AM_HALF' | 'PM_HALF', string> = {
   PM_HALF: '오후 반차',
 }
 
-type StatusFilter = 'PENDING' | 'DONE' | 'ALL'
-const DONE_STATUSES = new Set(['APPROVED', 'REJECTED', 'CANCELED'])
+type StatusFilter = 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'
+
+// CANCELED(신청인이 직접 취소)는 이 네 탭 중 어디에도 값으로 없다 — '전체' 탭(필터링 없음)에서만
+// 자연히 보이고, 나머지 세 탭은 status 값을 그대로 비교하므로 CANCELED 문서는 걸러진다.
+const STATUS_TABS: { value: StatusFilter; label: string }[] = [
+  { value: 'ALL', label: '전체' },
+  { value: 'PENDING', label: '승인대기' },
+  { value: 'APPROVED', label: '승인완료' },
+  { value: 'REJECTED', label: '승인거절' },
+]
 
 export default function ApprovalsPage() {
   const { data: session } = useSession()
@@ -76,8 +84,7 @@ export default function ApprovalsPage() {
   const filteredRows = useMemo(() => {
     const query = nameSearch.toLowerCase()
     return rows.filter((row) => {
-      if (statusFilter === 'PENDING' && row.status !== 'PENDING') return false
-      if (statusFilter === 'DONE' && !DONE_STATUSES.has(row.status)) return false
+      if (statusFilter !== 'ALL' && row.status !== statusFilter) return false
       if (!query) return true
       return row.requesterName.toLowerCase().includes(query)
     })
@@ -112,17 +119,20 @@ export default function ApprovalsPage() {
         <p className="text-sm text-destructive">{loadError}</p>
       ) : (
         <>
-          <div className="mb-3 flex items-center justify-end gap-2">
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PENDING">대기</SelectItem>
-                <SelectItem value="DONE">처리완료</SelectItem>
-                <SelectItem value="ALL">전체</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1 rounded-md border p-1">
+              {STATUS_TABS.map((tab) => (
+                <Button
+                  key={tab.value}
+                  type="button"
+                  size="sm"
+                  variant={statusFilter === tab.value ? 'default' : 'ghost'}
+                  onClick={() => setStatusFilter(tab.value)}
+                >
+                  {tab.label}
+                </Button>
+              ))}
+            </div>
             <div className="relative">
               <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
