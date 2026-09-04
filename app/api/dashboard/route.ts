@@ -48,15 +48,15 @@ export async function GET() {
     }
 
     // SUPER_ADMIN
-    const [activeFreelancerCount, approverCount, pendingSignupCount, assignedFreelancerCount] = await Promise.all([
+    const [activeFreelancerCount, approverCount, pendingSignupCount, assignedFreelancerCount, counts] = await Promise.all([
       getActiveFreelancerCount(),
       getApproverCount(),
       getPendingSignupCount(),
       getAssignedFreelancerCount(userId),
+      getApprovalCounts(userId),
     ])
     let approver: { pendingCount: number; processedCount: number; assignedFreelancerCount: number } | null = null
-    if (assignedFreelancerCount > 0) {
-      const counts = await getApprovalCounts(userId)
+    if (assignedFreelancerCount > 0 || counts.pending > 0) {
       approver = { pendingCount: counts.pending, processedCount: counts.processed, assignedFreelancerCount }
     }
     return NextResponse.json({
