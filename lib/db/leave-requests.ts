@@ -248,7 +248,7 @@ export interface ApprovalQueueRow {
   endDate: string
   type: 'FULL' | 'AM_HALF' | 'PM_HALF'
   requestedDays: number
-  status: LeaveRequestStatus
+  status: Exclude<LeaveRequestStatus, 'DRAFT'>
   reason: string
   rejectReason: string | null
   submittedAt: string | null
@@ -256,7 +256,9 @@ export interface ApprovalQueueRow {
 }
 
 // 본인이 결재자로 지정된 문서 전체를 반환한다. type='ADJUSTMENT'(관리자 수동 조정 기록)는
-// 실제 결재 대상이 아니므로 제외한다. 대기 상태를 항상 먼저 보여주고 그다음 제출일 역순으로
+// 실제 결재 대상이 아니므로 제외한다. status='DRAFT'(아직 제출 전인 프리랜서 임시저장 문서)도
+// 제외한다 — approverId는 제출 여부와 무관하게 항상 지정되므로, 그렇지 않으면 결재자에게
+// 아직 제출되지 않은 문서가 노출된다. 대기 상태를 항상 먼저 보여주고 그다음 제출일 역순으로
 // 정렬해, 처리해야 할 문서를 목록 상단에서 놓치지 않도록 한다.
 export async function getApprovalQueue(approverId: number): Promise<ApprovalQueueRow[]> {
   const requester = alias(users, 'requester')
@@ -276,14 +278,20 @@ export async function getApprovalQueue(approverId: number): Promise<ApprovalQueu
     })
     .from(leaveRequests)
     .innerJoin(requester, eq(leaveRequests.userId, requester.id))
-    .where(and(eq(leaveRequests.approverId, approverId), ne(leaveRequests.type, 'ADJUSTMENT')))
+    .where(
+      and(
+        eq(leaveRequests.approverId, approverId),
+        ne(leaveRequests.type, 'ADJUSTMENT'),
+        ne(leaveRequests.status, 'DRAFT')
+      )
+    )
 
   return rows
     .map(
       (r): ApprovalQueueRow => ({
         ...r,
         type: r.type as ApprovalQueueRow['type'],
-        status: r.status as LeaveRequestStatus,
+        status: r.status as Exclude<LeaveRequestStatus, 'DRAFT'>,
         submittedAt: r.submittedAt ? r.submittedAt.toISOString() : null,
       })
     )
