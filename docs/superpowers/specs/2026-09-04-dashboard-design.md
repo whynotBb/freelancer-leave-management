@@ -77,7 +77,8 @@
   - `FREELANCER`: `{ role: 'FREELANCER', freelancer: { granted, used, remaining, pendingCount } }`
   - `APPROVER`: `{ role: 'APPROVER', approver: { pendingCount, processedCount, assignedFreelancerCount } }`
   - `SUPER_ADMIN`: `{ role: 'SUPER_ADMIN', admin: { activeFreelancerCount, approverCount, pendingSignupCount }, approver: { pendingCount, processedCount, assignedFreelancerCount } | null }`
-    (`approver`는 `assignedFreelancerCount > 0`일 때만 값을 채우고, 아니면 `null`.)
+    (`approver`는 `assignedFreelancerCount > 0`이거나 결재대기 건수(`pending`)가 1건 이상일 때
+    값을 채우고, 둘 다 0이면 `null` — 3.3절 참고.)
 
 ## 5. 데이터 계층
 
