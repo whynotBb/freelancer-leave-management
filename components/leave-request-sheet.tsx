@@ -96,6 +96,7 @@ export function LeaveRequestSheet({
   const [submitting, setSubmitting] = useState(false)
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [overBalanceConfirmOpen, setOverBalanceConfirmOpen] = useState(false)
   const [editing, setEditing] = useState(false)
 
   const holidaySet = new Set(holidayDates)
@@ -202,11 +203,23 @@ export function LeaveRequestSheet({
       // 같은 기간 충돌은 이제 서버에서 에러로 차단되므로(!res.ok 분기), 여기 도달했다면
       // 저장/제출 모두 성공이다 — "임시저장"을 반복 클릭해 중복 DRAFT가 생기는 것을 막기
       // 위해 성공 즉시 닫는다.
+      setOverBalanceConfirmOpen(false)
       onOpenChange(false)
       onSaved()
     } finally {
       setSubmitting(false)
     }
+  }
+
+  // 잔여연차를 초과하는 제출은 더 이상 서버에서 차단하지 않는다(2026-09-04 정책 변경) —
+  // 대신 제출 버튼을 눌렀을 때 초과 여부를 한 번 더 확인시키고, 확인해야 실제로 제출된다.
+  // 초과가 아니면 지금까지처럼 확인 없이 바로 제출한다.
+  function handleSubmitClick() {
+    if (projectedRemaining < 0) {
+      setOverBalanceConfirmOpen(true)
+      return
+    }
+    submitForm('submit')
   }
 
   async function handleDelete() {
@@ -377,7 +390,7 @@ export function LeaveRequestSheet({
                 <Button variant="outline" onClick={() => submitForm('save')} disabled={submitting || !canSubmit}>
                   임시저장
                 </Button>
-                <Button onClick={() => submitForm('submit')} disabled={submitting || !canSubmit}>
+                <Button onClick={handleSubmitClick} disabled={submitting || !canSubmit}>
                   제출
                 </Button>
               </>
@@ -395,7 +408,7 @@ export function LeaveRequestSheet({
                 <Button variant="outline" onClick={() => submitForm('save')} disabled={submitting || !canSubmit}>
                   임시저장
                 </Button>
-                <Button onClick={() => submitForm('submit')} disabled={submitting || !canSubmit}>
+                <Button onClick={handleSubmitClick} disabled={submitting || !canSubmit}>
                   제출
                 </Button>
               </>
@@ -429,6 +442,16 @@ export function LeaveRequestSheet({
         submitting={submitting}
         error={error}
         destructive
+      />
+      <ConfirmDialog
+        open={overBalanceConfirmOpen}
+        onOpenChange={setOverBalanceConfirmOpen}
+        title="잔여연차 초과"
+        description={`잔여연차를 초과하는 신청입니다. 제출 시 잔여연차가 ${projectedRemaining}일이 됩니다. 그래도 제출하시겠습니까?`}
+        confirmLabel="제출"
+        onConfirm={() => submitForm('submit')}
+        submitting={submitting}
+        error={error}
       />
     </>
   )

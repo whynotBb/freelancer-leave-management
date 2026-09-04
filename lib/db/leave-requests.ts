@@ -208,10 +208,12 @@ export async function transitionOwnLeaveRequest(
   return { status: nextStatus }
 }
 
-// POST(신규 제출)와 PATCH(기존 DRAFT 제출) 양쪽에서 재사용하는 제출 시점 검증 — 잔여연차
-// 초과, 기간 충돌(같은 날짜에 연차나 같은 반차 유형이 이미 대기/승인 상태) 모두 차단(에러).
-// 오전 반차와 오후 반차처럼 같은 날짜라도 유형이 다르면 정상적으로 나눠 신청하는 조합이라
-// 충돌로 보지 않는다(hasConflictingActiveRequest 참고).
+// POST(신규 제출)와 PATCH(기존 DRAFT 제출) 양쪽에서 재사용하는 제출 시점 검증 — 기간 충돌
+// (같은 날짜에 연차나 같은 반차 유형이 이미 대기/승인 상태)만 차단(에러)한다. 잔여연차 초과는
+// 더 이상 차단하지 않는다(2026-09-04 정책 변경 — 원 설계 문서 6장 갱신 안내 참고): 초과 여부는
+// 클라이언트가 제출 전 확인 다이얼로그로 신청인에게 알리고, 최종 판단은 신청인/결재자에게
+// 맡긴다. 오전 반차와 오후 반차처럼 같은 날짜라도 유형이 다르면 정상적으로 나눠 신청하는
+// 조합이라 충돌로 보지 않는다(hasConflictingActiveRequest 참고).
 export async function checkSubmissionEligibility(
   userId: number,
   startDate: string,
@@ -229,10 +231,6 @@ export async function checkSubmissionEligibility(
   const today = new Date().toISOString().slice(0, 10)
   if (isBeyondBackdateLimit(startDate, today)) {
     return { ok: false, error: '신청 시작일이 오늘로부터 1개월보다 이전이라 제출할 수 없습니다. 결재자에게 문의해 주세요.' }
-  }
-  const balance = await getLeaveBalance(userId, me.hireDate, today)
-  if (requestedDays > balance.remaining) {
-    return { ok: false, error: '잔여 연차를 초과하여 제출할 수 없습니다.' }
   }
   const existing = await getOwnActiveRequestRanges(userId)
   if (hasConflictingActiveRequest(existing, startDate, endDate, type)) {
