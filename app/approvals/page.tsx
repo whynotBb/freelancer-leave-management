@@ -41,7 +41,7 @@ const STATUS_TABS: { value: StatusFilter; label: string }[] = [
   { value: 'ALL', label: '전체' },
   { value: 'PENDING', label: '승인대기' },
   { value: 'APPROVED', label: '승인완료' },
-  { value: 'REJECTED', label: '승인거절' },
+  { value: 'REJECTED', label: '반려' },
 ]
 
 export default function ApprovalsPage() {
@@ -52,7 +52,7 @@ export default function ApprovalsPage() {
   const [rows, setRows] = useState<ApprovalRow[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('PENDING')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [nameSearch, setNameSearch] = useState('')
   const [sheetOpen, setSheetOpen] = useState(false)
   const [selected, setSelected] = useState<ApprovalDocument | null>(null)
