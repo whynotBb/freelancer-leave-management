@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildExportFilename, buildHistorySheetRows, buildSummarySheetRows } from './user-export'
+import { buildExportFilename, buildHistorySheetRows, buildMonthlySheetRows, buildSummarySheetRows } from './user-export'
 
 describe('buildSummarySheetRows', () => {
   it('사용자 목록을 요약 시트 행으로 변환하고 null 값은 -으로 대체한다', () => {
@@ -123,3 +123,52 @@ describe('buildExportFilename', () => {
     ).toBe('프리랜서_연차정보_선택_20260826.xlsx')
   })
 })
+
+describe('buildMonthlySheetRows', () => {
+  it('월별 사용 연차 수량을 1월~12월 및 합계로 올바르게 집계한다', () => {
+    const users = [
+      {
+        id: 1,
+        name: '홍길동',
+        email: 'hong@example.com',
+        hireDate: '2026-01-01',
+        defaultApproverName: '관리자',
+        granted: 5,
+        used: 2,
+        remaining: 3,
+      },
+    ]
+    const historyByUser = [
+      [
+        { category: '사용' as const, date: '2026-03-15 09:00', detail: '오전반차 (-0.5일)', reason: '개인사유', actorName: '홍길동' },
+        { category: '사용' as const, date: '2026-03-20 09:00', detail: '연차 (-1일)', reason: '개인사유', actorName: '홍길동' },
+        { category: '사용' as const, date: '2026-05-10 09:00', detail: '오후반차 (-0.5일)', reason: '병원', actorName: '홍길동' },
+      ],
+    ]
+
+    const result = buildMonthlySheetRows(users, historyByUser, 2026)
+
+    expect(result).toEqual([
+      {
+        이름: '홍길동',
+        이메일: 'hong@example.com',
+        입사일: '2026-01-01',
+        '1월': 0,
+        '2월': 0,
+        '3월': 1.5,
+        '4월': 0,
+        '5월': 0.5,
+        '6월': 0,
+        '7월': 0,
+        '8월': 0,
+        '9월': 0,
+        '10월': 0,
+        '11월': 0,
+        '12월': 0,
+        합계: 2,
+      },
+    ])
+  })
+})
+
+

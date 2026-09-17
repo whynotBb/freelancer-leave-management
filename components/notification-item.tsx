@@ -16,6 +16,8 @@ import type { NotificationItem as NotificationItemType } from '@/hooks/use-notif
 
 const TYPE_CONFIG: Record<string, { icon: React.ElementType; href: string }> = {
   SIGNUP_PENDING: { icon: UserPlusIcon, href: '/admin/users-manage' },
+  SIGNUP_APPROVED: { icon: CheckCircleIcon, href: '/dashboard' },
+  SIGNUP_REJECTED: { icon: XCircleIcon, href: '/dashboard' },
   LEAVE_SUBMITTED: { icon: InboxIcon, href: '/approvals' },
   LEAVE_APPROVED: { icon: CheckCircleIcon, href: '/documents' },
   LEAVE_REJECTED: { icon: XCircleIcon, href: '/documents' },

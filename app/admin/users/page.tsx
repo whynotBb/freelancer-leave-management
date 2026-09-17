@@ -15,6 +15,13 @@ import { PageHeader } from '@/components/page-header'
 import { ADMIN_POLICY_SECTIONS, PolicyInfoSheet } from '@/components/policy-info-sheet'
 import { UserHistoryPanel } from '@/components/user-history-panel'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Table,
   TableBody,
   TableCell,
@@ -81,8 +88,14 @@ export default function AdminUsersPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [exportError, setExportError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
+  const [exportYear, setExportYear] = useState<string>('ALL')
+  const [exportMonth, setExportMonth] = useState<string>('ALL')
   const [loadingUsers, setLoadingUsers] = useState(true)
   const [loadUsersError, setLoadUsersError] = useState<string | null>(null)
+
+  const currentYear = new Date().getFullYear()
+  const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
+  const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1)
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -137,10 +150,17 @@ export default function AdminUsersPage() {
   }
 
   async function downloadExport() {
-    const url =
-      selectedIds.size > 0
-        ? `/api/admin/users/export?mode=selected&ids=${[...selectedIds].join(',')}`
-        : `/api/admin/users/export?mode=${onlyMine ? 'mine' : 'all'}`
+    const params = new URLSearchParams()
+    if (selectedIds.size > 0) {
+      params.set('mode', 'selected')
+      params.set('ids', [...selectedIds].join(','))
+    } else {
+      params.set('mode', onlyMine ? 'mine' : 'all')
+    }
+    if (exportYear !== 'ALL') params.set('year', exportYear)
+    if (exportMonth !== 'ALL') params.set('month', exportMonth)
+
+    const url = `/api/admin/users/export?${params.toString()}`
 
     setExportError(null)
     setExporting(true)

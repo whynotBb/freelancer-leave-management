@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { db } from '@/lib/db/client'
 import { users } from '@/lib/db/schema'
 import { isValidPassword, PASSWORD_POLICY_HINT } from '@/lib/domain/password-policy'
+import { createNotification } from '@/lib/db/notifications'
 
 const signupSchema = z.object({
   name: z.string().min(1),
@@ -51,6 +52,21 @@ export async function POST(request: Request) {
       })
       .where(eq(users.id, existing.id))
 
+    // 최고 관리자들에게 알림 전송
+    const superAdmins = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.role, 'SUPER_ADMIN'))
+
+    for (const admin of superAdmins) {
+      await createNotification({
+        recipientId: admin.id,
+        type: 'SIGNUP_PENDING',
+        refId: existing.id,
+        message: `${parsed.data.name} 님이 회원가입을 재신청했습니다.`,
+      })
+    }
+
     return NextResponse.json({ id: existing.id }, { status: 201 })
   }
 
@@ -64,6 +80,21 @@ export async function POST(request: Request) {
       signupStatus: 'PENDING',
     })
     .returning({ id: users.id })
+
+  // 최고 관리자들에게 알림 전송
+  const superAdmins = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.role, 'SUPER_ADMIN'))
+
+  for (const admin of superAdmins) {
+    await createNotification({
+      recipientId: admin.id,
+      type: 'SIGNUP_PENDING',
+      refId: created.id,
+      message: `${parsed.data.name} 님이 회원가입을 신청했습니다.`,
+    })
+  }
 
   return NextResponse.json({ id: created.id }, { status: 201 })
 }
