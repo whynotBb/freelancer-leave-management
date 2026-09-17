@@ -10,6 +10,7 @@ import {
   transitionOwnLeaveRequest,
   updateDraftLeaveRequest,
 } from '@/lib/db/leave-requests'
+import { createNotification } from '@/lib/db/notifications'
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
@@ -110,6 +111,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       const result = await transitionOwnLeaveRequest(requestId, userId, 'SUBMIT')
       if (!result) {
         return NextResponse.json({ error: '대상을 찾을 수 없습니다.' }, { status: 404 })
+      }
+      try {
+        const userName = (session.user as { name?: string }).name ?? '프리랜서'
+        await createNotification({
+          recipientId: body.approverId,
+          type: 'LEAVE_SUBMITTED',
+          refId: requestId,
+          message: `${userName}님이 "${body.title}" 휴가를 신청했습니다.`,
+        })
+      } catch {
+        // 알림 생성이 실패하더라도 제출 상태 변경은 이미 커밋되었으므로 클라이언트 응답에 영향을 주지 않는다.
       }
       return NextResponse.json({
         ok: true,
