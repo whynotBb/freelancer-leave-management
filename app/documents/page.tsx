@@ -252,24 +252,12 @@ export default function DocumentsPage() {
 
                 {/* 잔여 연차 */}
                 <div className="flex items-start gap-2.5">
-                  <div
-                    className={cn(
-                      'mt-0.5 rounded-md p-1.5 shrink-0',
-                      (summary?.remaining ?? 0) < 0
-                        ? 'bg-destructive/10 text-destructive'
-                        : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                    )}
-                  >
+                  <div className="mt-0.5 rounded-md bg-amber-500/10 p-1.5 text-amber-600 dark:text-amber-400 shrink-0">
                     <SparklesIcon className="size-4" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">잔여 연차</p>
-                    <p
-                      className={cn(
-                        'text-xl font-bold tracking-tight',
-                        (summary?.remaining ?? 0) < 0 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'
-                      )}
-                    >
+                    <p className="text-xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
                       {summary?.remaining ?? 0}
                       <span className="ml-0.5 text-xs font-normal text-muted-foreground">일</span>
                     </p>

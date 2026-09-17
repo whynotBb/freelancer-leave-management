@@ -60,31 +60,16 @@ export function FreelancerDashboard({ granted, used, remaining, pendingCount }: 
         </Card>
 
         {/* 잔여 연차 */}
-        <Card
-          className={cn(
-            'relative overflow-hidden transition-all hover:shadow-md',
-            remaining < 0 ? 'border-destructive/30 bg-destructive/5' : 'border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20'
-          )}
-        >
+        <Card className="relative overflow-hidden transition-all hover:shadow-md border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">잔여 연차</span>
-              <div
-                className={cn(
-                  'rounded-md p-2',
-                  remaining < 0 ? 'bg-destructive/10 text-destructive' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                )}
-              >
+              <div className="rounded-md bg-amber-500/10 p-2 text-amber-600 dark:text-amber-400">
                 <SparklesIcon className="size-4" />
               </div>
             </div>
             <div className="mt-3 flex items-baseline gap-1">
-              <span
-                className={cn(
-                  'text-3xl font-bold tracking-tight',
-                  remaining < 0 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'
-                )}
-              >
+              <span className="text-3xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
                 {remaining}
               </span>
               <span className="text-sm text-muted-foreground">일</span>
