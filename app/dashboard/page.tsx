@@ -40,7 +40,7 @@ export default function DashboardPage() {
   }, [])
 
   return (
-    <div className="w-full">
+    <div className="mx-auto max-w-5xl space-y-6 pb-8">
       <PageHeader title="대시보드" description="내 현황을 한눈에 확인합니다." />
       {loading ? (
         <LoadingSpinner />
