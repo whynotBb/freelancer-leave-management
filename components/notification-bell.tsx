@@ -17,7 +17,7 @@ export function NotificationBell() {
         <Button variant="ghost" size="icon" className="relative" aria-label="알림">
           <BellIcon className="size-4" />
           {unreadCount > 0 && (
-            <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground leading-none">
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground leading-none shadow-xs">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
