@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { BookOpenIcon, SearchIcon } from 'lucide-react'
+import { BookOpenIcon, Building2Icon, CalendarIcon, CheckCircle2Icon, SearchIcon, SparklesIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -15,6 +16,7 @@ import { CategoryBadge } from '@/components/category-badge'
 import { StatusBadge } from '@/components/status-badge'
 import { PolicyInfoSheet } from '@/components/policy-info-sheet'
 import { DOCUMENTS_POLICY_SECTIONS } from '@/components/documents-policy-sections'
+import { cn } from '@/lib/utils'
 
 interface MyDocumentSummary {
   hireDate: string | null
@@ -200,27 +202,82 @@ export default function DocumentsPage() {
         <p className="text-sm text-destructive">{loadError}</p>
       ) : (
         <>
-          <div className="mb-6 space-y-3 rounded-lg border p-4">
-            <h2 className="font-medium">휴가현황</h2>
-            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-              <div>
-                <p className="text-xs text-muted-foreground">입사일</p>
-                <p>{summary?.hireDate ?? '-'}</p>
+          <Card className="mb-4">
+            <CardContent className="px-6">
+              <h2 className="mb-3 text-base font-semibold tracking-tight">휴가 현황</h2>
+              <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+                {/* 입사일 & 근무기간 */}
+                <div className="flex items-start gap-2.5">
+                  <div className="mt-0.5 rounded-md bg-muted p-1.5 text-muted-foreground shrink-0">
+                    <Building2Icon className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground">입사일 / 근무기간</p>
+                    <p className="text-sm font-semibold tracking-tight whitespace-nowrap">{summary?.hireDate ?? '-'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {summary?.monthsOfService !== null && summary?.monthsOfService !== undefined
+                        ? `근무 ${summary.monthsOfService}개월`
+                        : '-'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 발생 연차 */}
+                <div className="flex items-start gap-2.5">
+                  <div className="mt-0.5 rounded-md bg-primary/10 p-1.5 text-primary shrink-0">
+                    <CalendarIcon className="size-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">발생 연차</p>
+                    <p className="text-xl font-bold tracking-tight">
+                      {summary?.granted ?? 0}
+                      <span className="ml-0.5 text-xs font-normal text-muted-foreground">일</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* 사용 연차 */}
+                <div className="flex items-start gap-2.5">
+                  <div className="mt-0.5 rounded-md bg-emerald-500/10 p-1.5 text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <CheckCircle2Icon className="size-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">사용 연차</p>
+                    <p className="text-xl font-bold tracking-tight">
+                      {summary?.used ?? 0}
+                      <span className="ml-0.5 text-xs font-normal text-muted-foreground">일</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* 잔여 연차 */}
+                <div className="flex items-start gap-2.5">
+                  <div
+                    className={cn(
+                      'mt-0.5 rounded-md p-1.5 shrink-0',
+                      (summary?.remaining ?? 0) < 0
+                        ? 'bg-destructive/10 text-destructive'
+                        : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                    )}
+                  >
+                    <SparklesIcon className="size-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">잔여 연차</p>
+                    <p
+                      className={cn(
+                        'text-xl font-bold tracking-tight',
+                        (summary?.remaining ?? 0) < 0 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'
+                      )}
+                    >
+                      {summary?.remaining ?? 0}
+                      <span className="ml-0.5 text-xs font-normal text-muted-foreground">일</span>
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">근무기간</p>
-                <p>{summary?.monthsOfService !== null && summary?.monthsOfService !== undefined ? `${summary.monthsOfService}개월` : '-'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">발생/사용</p>
-                <p>{summary?.granted ?? 0}일 / {summary?.used ?? 0}일</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">잔여</p>
-                <p className={(summary?.remaining ?? 0) < 0 ? 'text-destructive' : undefined}>{summary?.remaining ?? 0}일</p>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           <div className="mb-3 flex items-center justify-end gap-2">
             <Select value={yearFilter} onValueChange={setYearFilter}>

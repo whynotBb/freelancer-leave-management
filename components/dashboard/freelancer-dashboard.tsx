@@ -48,7 +48,7 @@ export function FreelancerDashboard({ granted, used, remaining, pendingCount }: 
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">사용 연차</span>
-              <div className="rounded-md bg-muted p-2 text-muted-foreground">
+              <div className="rounded-md bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2Icon className="size-4" />
               </div>
             </div>
