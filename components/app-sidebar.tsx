@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/breadcrumb'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { NotificationBell } from '@/components/notification-bell'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -275,6 +276,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Button variant="ghost" size="icon" aria-label="도움말">
               <CircleHelpIcon className="size-4" />
             </Button>
+            <NotificationBell />
             <ThemeToggle />
           </div>
         </header>
