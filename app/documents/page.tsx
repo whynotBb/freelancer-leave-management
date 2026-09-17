@@ -127,6 +127,29 @@ export default function DocumentsPage() {
       })
       .then(setApprovers)
       .catch(() => setApprovers([]))
+
+    const handleRefresh = () => {
+      loadDocuments()
+    }
+
+    const handleNotification = (e: Event) => {
+      const customEvent = e as CustomEvent<{ newItems: { type: string }[] }>
+      const newItems = customEvent.detail?.newItems ?? []
+      const relevant = newItems.some((item) =>
+        ['LEAVE_APPROVED', 'LEAVE_REJECTED', 'LEAVE_ADJUSTED', 'APPROVER_CHANGED'].includes(item.type)
+      )
+      if (relevant) {
+        loadDocuments()
+      }
+    }
+
+    window.addEventListener('app:refresh-data', handleRefresh)
+    window.addEventListener('app:notification-received', handleNotification)
+
+    return () => {
+      window.removeEventListener('app:refresh-data', handleRefresh)
+      window.removeEventListener('app:notification-received', handleNotification)
+    }
   }, [])
 
   if (role && role !== 'FREELANCER') return null

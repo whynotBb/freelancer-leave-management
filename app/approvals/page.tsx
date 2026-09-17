@@ -77,8 +77,28 @@ export default function ApprovalsPage() {
   }
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadQueue()
+
+    const handleRefresh = () => {
+      loadQueue()
+    }
+
+    const handleNotification = (e: Event) => {
+      const customEvent = e as CustomEvent<{ newItems: { type: string }[] }>
+      const newItems = customEvent.detail?.newItems ?? []
+      const relevant = newItems.some((item) => item.type === 'LEAVE_SUBMITTED')
+      if (relevant) {
+        loadQueue()
+      }
+    }
+
+    window.addEventListener('app:refresh-data', handleRefresh)
+    window.addEventListener('app:notification-received', handleNotification)
+
+    return () => {
+      window.removeEventListener('app:refresh-data', handleRefresh)
+      window.removeEventListener('app:notification-received', handleNotification)
+    }
   }, [])
 
   const filteredRows = useMemo(() => {

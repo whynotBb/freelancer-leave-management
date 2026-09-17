@@ -19,6 +19,8 @@ export function useNotifications() {
   const [state, setState] = useState<NotificationState>({ unreadCount: 0, items: [] })
   const esRef = useRef<EventSource | null>(null)
 
+  const prevItemsRef = useRef<NotificationItem[]>([])
+
   const connect = useCallback(() => {
     if (esRef.current) {
       esRef.current.close()
@@ -31,7 +33,19 @@ export function useNotifications() {
     es.addEventListener('notifications', (e) => {
       try {
         const data = JSON.parse(e.data) as NotificationState
+        const prevIds = new Set(prevItemsRef.current.map((i) => i.id))
+        const newItems = data.items.filter((i) => !prevIds.has(i.id))
+        prevItemsRef.current = data.items
+
         setState(data)
+
+        if (typeof window !== 'undefined' && newItems.length > 0) {
+          window.dispatchEvent(
+            new CustomEvent('app:notification-received', {
+              detail: { newItems, state: data },
+            })
+          )
+        }
       } catch {
         // 파싱 실패는 무시
       }

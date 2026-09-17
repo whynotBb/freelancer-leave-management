@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   BellIcon,
   CheckCircleIcon,
@@ -41,12 +41,22 @@ interface Props {
 
 export function NotificationItem({ item, onRead }: Props) {
   const router = useRouter()
+  const pathname = usePathname()
   const config = TYPE_CONFIG[item.type] ?? { icon: BellIcon, href: '/dashboard' }
   const Icon = config.icon
 
   function handleClick() {
     if (!item.read) onRead(item.id)
-    router.push(config.href)
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('app:refresh-data'))
+    }
+
+    if (pathname === config.href) {
+      router.refresh()
+    } else {
+      router.push(config.href)
+    }
   }
 
   return (
