@@ -64,6 +64,7 @@ const COMMON_LINKS = [
   { href: '/dashboard', label: '대시보드', icon: LayoutDashboardIcon },
   { href: '/documents', label: '내 문서', icon: FileTextIcon, roles: ['FREELANCER'] },
   { href: '/approvals', label: '결재함', icon: InboxIcon, roles: ['SUPER_ADMIN', 'APPROVER'] },
+  { href: '/calendar', label: '휴가 캘린더', icon: CalendarDaysIcon },
 ]
 
 // 관리자 전용 메뉴: 실제로 페이지가 존재하는 항목만 나열한다. 각 항목의 roles가 현재
