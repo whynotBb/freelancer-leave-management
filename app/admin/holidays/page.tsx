@@ -71,7 +71,12 @@ export default function HolidaysPage() {
     () =>
       oneTime
         .filter((h) => yearFilter === 'all' || h.date.slice(0, 4) === yearFilter)
-        .sort((a, b) => (a.date < b.date ? -1 : 1)),
+        .sort((a, b) => {
+          const yearA = a.date.slice(0, 4)
+          const yearB = b.date.slice(0, 4)
+          if (yearA !== yearB) return yearB.localeCompare(yearA)
+          return a.date < b.date ? -1 : 1
+        }),
     [oneTime, yearFilter]
   )
   const deleteTarget = holidays.find((h) => h.id === deleteTargetId) ?? null
@@ -143,9 +148,11 @@ export default function HolidaysPage() {
       ) : loadError ? (
         <p className="text-sm text-destructive">{loadError}</p>
       ) : (
-        <div className="space-y-8">
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-2 xl:items-start">
           <section>
-            <h2 className="mb-3 font-medium">매년 반복 공휴일</h2>
+            <div className="mb-3 flex h-9 items-center">
+              <h2 className="font-medium">매년 반복 공휴일</h2>
+            </div>
             {recurring.length === 0 ? (
               <p className="text-sm text-muted-foreground">등록된 반복 공휴일이 없습니다.</p>
             ) : (
@@ -194,7 +201,7 @@ export default function HolidaysPage() {
           </section>
 
           <section>
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex h-9 items-center justify-between">
               <h2 className="font-medium">특정 연도 공휴일</h2>
               <Select value={yearFilter} onValueChange={setYearFilter}>
                 <SelectTrigger className="w-28">

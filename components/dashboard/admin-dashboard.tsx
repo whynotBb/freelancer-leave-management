@@ -21,9 +21,9 @@ export function AdminDashboard({
     <div className="space-y-8">
       {/* 가입 승인 대기 배너 */}
       {pendingSignupCount > 0 && (
-        <div className="flex flex-col gap-3 rounded-lg border border-amber-300/60 bg-amber-50/80 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-amber-800/60 dark:bg-amber-950/40">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-amber-500/20 p-2 text-amber-600 dark:text-amber-400">
+        <div className="flex flex-col items-end gap-3 rounded-lg border border-amber-300/60 bg-amber-50/80 p-4 lg:flex-row lg:items-center lg:justify-between dark:border-amber-800/60 dark:bg-amber-950/40">
+          <div className="flex w-full items-start gap-3 lg:w-auto">
+            <div className="shrink-0 rounded-full bg-amber-500/20 p-2 text-amber-600 dark:text-amber-400">
               <AlertCircleIcon className="size-5" />
             </div>
             <div>
@@ -35,7 +35,7 @@ export function AdminDashboard({
               </p>
             </div>
           </div>
-          <Button asChild size="sm" className="bg-amber-600 text-white hover:bg-amber-700 sm:shrink-0">
+          <Button asChild size="sm" className="bg-amber-600 text-white hover:bg-amber-700 lg:shrink-0">
             <Link href="/admin/users-manage" className="gap-1.5">
               사용자 관리로 이동 <ArrowRightIcon className="size-3.5" />
             </Link>
@@ -45,16 +45,16 @@ export function AdminDashboard({
 
       {/* 시스템 전체 현황 */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
+        <div>
+          <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-semibold tracking-tight">시스템 전체 현황</h2>
-            <p className="text-sm text-muted-foreground">현재 시스템에 등록된 전체 사용자 현황입니다.</p>
+            <Button asChild variant="outline" size="sm" className="shrink-0 gap-1.5">
+              <Link href="/admin/users-manage">
+                사용자 관리 <ArrowRightIcon className="size-3.5" />
+              </Link>
+            </Button>
           </div>
-          <Button asChild variant="outline" size="sm" className="gap-1.5">
-            <Link href="/admin/users-manage">
-              사용자 관리 <ArrowRightIcon className="size-3.5" />
-            </Link>
-          </Button>
+          <p className="mt-1 text-sm text-muted-foreground">현재 시스템에 등록된 전체 사용자 현황입니다.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

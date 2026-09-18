@@ -139,13 +139,12 @@ export default function ApprovalsPage() {
         <p className="text-sm text-destructive">{loadError}</p>
       ) : (
         <>
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1 rounded-md border p-1">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <div className="flex w-fit items-center gap-2 rounded-lg border bg-muted/30 p-1">
               {STATUS_TABS.map((tab) => (
                 <Button
                   key={tab.value}
                   type="button"
-                  size="sm"
                   variant={statusFilter === tab.value ? 'default' : 'ghost'}
                   onClick={() => setStatusFilter(tab.value)}
                 >
@@ -153,13 +152,13 @@ export default function ApprovalsPage() {
                 </Button>
               ))}
             </div>
-            <div className="relative">
+            <div className="relative sm:ml-auto">
               <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="신청인 검색"
                 value={nameSearch}
                 onChange={(e) => setNameSearch(e.target.value)}
-                className="w-56 pl-8"
+                className="w-full pl-8 sm:w-56"
               />
             </div>
           </div>

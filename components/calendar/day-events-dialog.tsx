@@ -47,7 +47,7 @@ export function DayEventsDialog({
                 <Badge
                   variant="outline"
                   className={cn(
-                    'shrink-0 text-[10px] px-1.5 py-0.5 font-semibold',
+                    'w-16 shrink-0 justify-center text-[10px] px-1.5 py-0.5 font-semibold',
                     evt.type === 'FULL'
                       ? 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20'
                       : 'bg-amber-500/10 text-amber-600 border-amber-500/20'

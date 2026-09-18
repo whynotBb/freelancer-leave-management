@@ -14,16 +14,16 @@ interface FreelancerDashboardProps {
 export function FreelancerDashboard({ granted, used, remaining, pendingCount }: FreelancerDashboardProps) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div>
+        <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold tracking-tight">내 휴가 현황</h2>
-          <p className="text-sm text-muted-foreground">올해 발생 및 사용한 연차 이력을 한눈에 확인합니다.</p>
+          <Button asChild variant="outline" size="sm" className="shrink-0 gap-1.5">
+            <Link href="/documents">
+              내 문서 전체보기 <ArrowRightIcon className="size-3.5" />
+            </Link>
+          </Button>
         </div>
-        <Button asChild variant="outline" size="sm" className="gap-1.5">
-          <Link href="/documents">
-            내 문서 전체보기 <ArrowRightIcon className="size-3.5" />
-          </Link>
-        </Button>
+        <p className="mt-1 text-sm text-muted-foreground">올해 발생 및 사용한 연차 이력을 한눈에 확인합니다.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

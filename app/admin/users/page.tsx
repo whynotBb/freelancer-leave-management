@@ -455,7 +455,7 @@ export default function AdminUsersPage() {
           variant="outline"
           disabled={exporting}
           onClick={downloadExport}
-          className="hidden xl:inline-flex"
+          className="hidden 2xl:inline-flex"
         >
           <DownloadIcon className="size-4" />
           {selectedIds.size > 0 ? `선택 항목 다운로드 (${selectedIds.size}건)` : '엑셀 다운로드'}

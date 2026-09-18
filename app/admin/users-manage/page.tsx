@@ -268,16 +268,16 @@ export default function AdminUsersManagePage() {
     <div className="w-full">
       <PageHeader title="사용자 관리" description="가입 승인, 권한, 퇴사 처리를 한 화면에서 관리합니다." />
 
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant={tab === 'all' ? 'default' : 'outline'} onClick={() => setTab('all')}>
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex w-fit items-center gap-2 rounded-lg border bg-muted/30 p-1">
+          <Button variant={tab === 'all' ? 'default' : 'ghost'} onClick={() => setTab('all')}>
             전체 {users.length}
           </Button>
-          <Button variant={tab === 'pending' ? 'default' : 'outline'} onClick={() => setTab('pending')}>
+          <Button variant={tab === 'pending' ? 'default' : 'ghost'} onClick={() => setTab('pending')}>
             승인대기 {pendingCount}
           </Button>
         </div>
-        <div className="relative">
+        <div className="relative sm:ml-auto">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="이름/이메일 검색"

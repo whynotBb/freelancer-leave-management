@@ -13,16 +13,16 @@ interface ApproverSummaryBoxProps {
 export function ApproverSummaryBox({ pendingCount, processedCount, assignedFreelancerCount }: ApproverSummaryBoxProps) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div>
+        <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold tracking-tight">내 결재 현황</h2>
-          <p className="text-sm text-muted-foreground">담당 프리랜서의 휴가 신청 및 결재 처리 현황입니다.</p>
+          <Button asChild variant="outline" size="sm" className="shrink-0 gap-1.5">
+            <Link href="/approvals">
+              결재함 바로가기 <ArrowRightIcon className="size-3.5" />
+            </Link>
+          </Button>
         </div>
-        <Button asChild variant="outline" size="sm" className="gap-1.5">
-          <Link href="/approvals">
-            결재함 바로가기 <ArrowRightIcon className="size-3.5" />
-          </Link>
-        </Button>
+        <p className="mt-1 text-sm text-muted-foreground">담당 프리랜서의 휴가 신청 및 결재 처리 현황입니다.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

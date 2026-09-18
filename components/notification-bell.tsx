@@ -43,7 +43,7 @@ export function NotificationBell() {
             <p className="text-sm text-muted-foreground">새 알림이 없습니다</p>
           </div>
         ) : (
-          <ScrollArea className="max-h-[360px]">
+          <ScrollArea className="h-[360px]">
             <div className="flex flex-col gap-0.5 p-1">
               {items.map((item) => (
                 <NotificationItem key={item.id} item={item} onRead={markAsRead} />

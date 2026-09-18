@@ -112,18 +112,20 @@ export function CalendarToolbar({
         </div>
       </div>
 
-      {/* 범례: 공휴일 / 연차 / 반차 색상 구분 */}
+      {/* 범례: 공휴일 / 연차 / 반차 색상 구분 (리스트 보기에서는 공휴일 범례 숨김) */}
       <div className="flex flex-wrap items-center justify-end gap-3 text-[11px] text-muted-foreground px-0.5">
+        {viewMode !== 'list' && (
+          <span className="flex items-center gap-1.5">
+            <span className="size-2.5 rounded-full bg-red-300" />
+            공휴일
+          </span>
+        )}
         <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-red-500" />
-          공휴일
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-indigo-500" />
+          <span className="size-2.5 rounded-full bg-indigo-300" />
           연차
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-amber-500" />
+          <span className="size-2.5 rounded-full bg-amber-300" />
           오전/오후 반차
         </span>
       </div>
